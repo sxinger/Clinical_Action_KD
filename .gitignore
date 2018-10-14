@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+Sepsis_Bundle/data/
+Suspected_Infection/data/
+*config.csv
+*.txt
+*.log
+
+
