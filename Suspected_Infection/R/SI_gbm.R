@@ -1,6 +1,6 @@
 #### 3hr completion prediction ####
 rm(list=ls()); gc()
-setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle")
+setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
 source("./R/util.R")
 library("Matrix") 

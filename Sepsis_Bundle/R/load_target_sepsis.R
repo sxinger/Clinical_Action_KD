@@ -4,25 +4,22 @@
 # already existed in my schema                                                #
 ###############################################################################
 
-## set up
+#clean the slate
 rm(list=ls()); gc()
-setwd("~/sepsis")
-source("./helper_functions.R")
-source("./sql_utility_functions.R")
+
+#set up working directory
+setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle")
+
+source("./R/util.R")
 require_libraries(c( "dplyr"
                      ,"tidyr"
                      ,"magrittr"
                      ,"ROracle"
                      ,"DBI"))
 
-
 ## Connect to Oracle database
-#set up connection with Oracle db
-heronb2_config<-read.csv('../heronb2_config.csv')
-c_connect<-dbConnect(Oracle(),
-                     heronb2_config$username,
-                     heronb2_config$password,
-                     heronb2_config$access)
+config_file<-read.csv('../config.csv')
+conn<-connect_to_db("Oracle",config_file)
 
 
 ## load targets -- 3-hour treatment completion

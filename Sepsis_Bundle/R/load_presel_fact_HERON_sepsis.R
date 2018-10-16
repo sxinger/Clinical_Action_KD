@@ -8,12 +8,9 @@
 rm(list=ls()); gc()
 
 #set up working directory
-setwd("~/sepsis")
+setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle")
 
-#load some helper functions (may not all be needed in this script)
-source("./helper_functions.R")
-
-#load required libraries
+source("./R/util.R")
 require_libraries(c( "dplyr"
                      ,"tidyr"
                      ,"magrittr"
@@ -21,12 +18,9 @@ require_libraries(c( "dplyr"
                      ,"DBI"))
 
 ## Connect to Oracle database
-#set up connection with Oracle db
-heronb2_config<-read.csv('../heronb2_config.csv')
-c_connect<-dbConnect(Oracle(),
-                     heronb2_config$username,
-                     heronb2_config$password,
-                     heronb2_config$access)
+config_file<-read.csv('../config.csv')
+conn<-connect_to_db("Oracle",config_file)
+
 
 #get pre-selected facts from heron (saved tables in HERON under "XSONG"'s schema)
 # PreSel_cat_var - pre-selected categorical features stack

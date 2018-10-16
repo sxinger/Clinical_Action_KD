@@ -3,9 +3,9 @@
 # partition patient cohort into training (70%) and testing (30%) sets#
 ######################################################################
 # set up
-setwd("~/sepsis")
+setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle/")
 rm(list=ls()); gc()
-source("./helper_functions.R")
+source("./R/util.R")
 require_libraries(c("Matrix",
                     "dplyr",
                     "tidyr",
