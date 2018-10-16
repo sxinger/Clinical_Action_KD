@@ -17,8 +17,8 @@ require_libraries(c("Matrix",
 ))
 
 ## load data
-# out_grp<-readRDS("./output/subgrp_analysis.rda")
-out_grp<-readRDS("./output/subgrp_analysis_w_lac.rda")
+out_grp<-readRDS("./output/subgrp_analysis.rda")
+# out_grp<-readRDS("./output/subgrp_analysis_w_lac.rda")
 
 ## collect various modeling results
 perf_mat<-c()
@@ -131,6 +131,7 @@ for(grp in 1:2){
                                "prauc1",
                                "opt_acc",
                                "mcc",
+                               "opt_thresh",
                                "opt_sens",
                                "opt_spec",
                                "opt_fscore",
@@ -140,12 +141,13 @@ for(grp in 1:2){
                                       roauc="1. ROAUC",
                                       prauc1="2. PRAUC",
                                       mcc="3. Matthews Correlation Coefficient",
-                                      opt_acc="4. Accuracy",
-                                      opt_sens="5. Sensitivity",
-                                      opt_spec="6. Specificity",
-                                      opt_fscore="7. F-score",
-                                      opt_ppv="8. Positive Predictive Value",
-                                      opt_npv="9. Negative Predictive Value"))
+                                      opt_thresh="4.Threshold",
+                                      opt_acc="5. Accuracy",
+                                      opt_sens="6. Sensitivity",
+                                      opt_spec="7. Specificity",
+                                      opt_fscore="8. F-score",
+                                      opt_ppv="9. Positive Predictive Value",
+                                      opt_npv="10. Negative Predictive Value"))
   
   #--stack results
   perf_mat %<>% bind_rows(perf_overall %>% mutate(subgrp=grp))

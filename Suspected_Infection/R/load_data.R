@@ -59,7 +59,7 @@ for(i in seq_along(chunk_id)){
   feat_i<-chk_i %>%
     dplyr::select(ENCOUNTER_NUM,CONCEPT_CD,NVAL_NUM,MODIFIER_CD,START_SINCE_TRIAGE)
     inner_join(servdep, by="ENCOUNTER_NUM") %>%
-    filter(START_SINCE_TRIAGE < time_bd)
+    filter(START_SINCE_TRIAGE < time_bd) #strictly less than
   
   if(chunk_id[i] %in% c()){
     
