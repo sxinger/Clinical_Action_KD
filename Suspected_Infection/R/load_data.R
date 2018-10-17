@@ -66,7 +66,7 @@ for(i in seq_along(chunk_id)){
                            chunk_id$CONCEPT_PREFIX[i],"'"))
   
   #--pre-filter: time
-  feat_i<-chk_i %>%
+  data_i_o<-chk_i %>%
     dplyr::select(ENCOUNTER_NUM,CONCEPT_CD,NVAL_NUM,UNITS_CD,TVAL_CHAR,
                   MODIFIER_CD,START_SINCE_TRIAGE) %>%
     inner_join(servdep,by="ENCOUNTER_NUM") %>%
@@ -74,20 +74,20 @@ for(i in seq_along(chunk_id)){
   
   #--re-construct variables
   if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|MEDICATION_ID")){
-    data_i<-feat_i %>%
+    data_i<-data_i_o %>%
       filter(is.na(NVAL_NUM) & is.na(UNITS_CD)) %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique %>%
-      bind_rows(feat_i %>%
+      bind_rows(data_i_o %>%
                   filter(is.na(NVAL_NUM) & !is.na(UNITS_CD)) %>%
                   unite("UNIT_MOD",c("UNITS_CD","MODIFIER_CD")) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNIT_MOD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
                   dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
                   unique) %>%
-      bind_rows(feat_i %>%
+      bind_rows(data_i_o %>%
                   filter(!is.na(NVAL_NUM)) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNITS_CD","MODIFIER_CD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
@@ -95,14 +95,14 @@ for(i in seq_along(chunk_id)){
                   unique)
   
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|DI","KUH|DX_ID","KUH|PROC_ID")){
-    data_i<-feat_i %>%
+    data_i<-data_i_o %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|COMPONENT_ID")){
-    data_i<-feat_i %>%
+    data_i<-data_i_o %>%
       filter(MODIFIER_CD!="@") %>%
       unite("VARIABLE",c("CONCEPT_CD","UNITS_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
@@ -110,7 +110,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|FLO_MEAS_ID+hash","KUH|FLO_MEAS_ID+LINE")){
-    data_i<-feat_i %>%
+    data_i<-data_i_o %>%
       mutate(TVAL_CHAR=gsub(".*_","",CONCEPT_CD),
              VARIABLE=gsub("_","",str_extract(CONCEPT_CD,"_[0-9]+$"))) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
@@ -118,7 +118,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else{
-    data_i<-feat_i %>%
+    data_i<-data_i_o %>%
       mutate(TVAL_CHAR=CONCEPT_CD) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
@@ -183,12 +183,12 @@ data_at_enc %<>%
 
 
 #========save data
-saveRDS(fact_stack,file="./data/data_at_enc.rda")
+saveRDS(data_at_enc,file="./data/data_at_enc.rda")
 saveRDS(feat_at_enc,file="./data/feat_at_enc.rda")
 
 
 ##======================================load data before encounter===========================================#
-rm(data_at_enc,feat_at,servdep); gc()
+rm(data_at_enc,feat_at_enc,servdep); gc()
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_BEF_ENC")
 
 data_bef_enc<-c()
@@ -202,20 +202,20 @@ for(i in seq_along(chunk_id)){
 
   #--re-construct variables
   if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|MEDICATION_ID")){
-    data_i<-feat_i %>%
+    data_i<-chk_i %>%
       filter(is.na(NVAL_NUM) & is.na(UNITS_CD)) %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique %>%
-      bind_rows(feat_i %>%
+      bind_rows(chk_i %>%
                   filter(is.na(NVAL_NUM) & !is.na(UNITS_CD)) %>%
                   unite("UNIT_MOD",c("UNITS_CD","MODIFIER_CD")) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNIT_MOD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
                   dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
                   unique) %>%
-      bind_rows(feat_i %>%
+      bind_rows(chk_i %>%
                   filter(!is.na(NVAL_NUM)) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNITS_CD","MODIFIER_CD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
@@ -223,14 +223,14 @@ for(i in seq_along(chunk_id)){
                   unique)
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|DI","KUH|DX_ID","KUH|PROC_ID")){
-    data_i<-feat_i %>%
+    data_i<-chk_i %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|COMPONENT_ID")){
-    data_i<-feat_i %>%
+    data_i<-chk_i %>%
       filter(MODIFIER_CD!="@") %>%
       unite("VARIABLE",c("CONCEPT_CD","UNITS_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
@@ -238,7 +238,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|FLO_MEAS_ID+hash","KUH|FLO_MEAS_ID+LINE")){
-    data_i<-feat_i %>%
+    data_i<-chk_i %>%
       mutate(TVAL_CHAR=gsub(".*_","",CONCEPT_CD),
              VARIABLE=gsub("_","",str_extract(CONCEPT_CD,"_[0-9]+$"))) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
@@ -246,7 +246,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else{
-    data_i<-feat_i %>%
+    data_i<-chk_i %>%
       mutate(TVAL_CHAR=CONCEPT_CD) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
@@ -319,7 +319,7 @@ data_bef_enc %<>%
 
 #========save data
 saveRDS(data_bef_enc,file="./data/data_bef_enc.rda")
-saveRDS(feat_bed_enc,file="./data/feat_bef_enc.rda")
+saveRDS(feat_bef_enc,file="./data/feat_bef_enc.rda")
 
 
 
