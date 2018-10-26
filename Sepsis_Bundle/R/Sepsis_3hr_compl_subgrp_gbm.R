@@ -17,12 +17,11 @@ require_libraries(c(
 ## Load in fact_stack and pat_tbl
 fact_stack<-readRDS("./data/sepsis_presel_long_ohc.rda")
 rand_sample<-readRDS("./data/rand_sample_idx.rda")
-strat_sample<-readRDS("./data/")
 
 
 ## partition 
 x_mt<-fact_stack %>%
-  # filter(!grepl("^((Lactate)|(Organ Dysfunc_OD:IL))+",VARIABLE_agg)) %>% # drop lactate
+  filter(!grepl("^((Lactate)|(Organ Dysfunc_OD:IL))+",VARIABLE_agg)) %>% # drop lactate
   filter(!grepl("((Infection Grp POA_038 Septicemia)|(Infection POA_038))+",VARIABLE_agg)) %>% # drop septicemia dx POA
   filter(!grepl("(Organ Dysfunc_distincts)+",VARIABLE_agg)) %>% # drop distinct OD sites (confound with hypotension)
   # filter(!grepl("^((SBP_)|(MAP_)|(DBP_)|(Organ Dysfunc_OD:Hypotension))+",VARIABLE_agg)) %>% # drop hypotension-related
@@ -66,14 +65,14 @@ for(grp in 1:2){
   eval_metric<-"auc"
   objective<-"binary:logistic"
   grid_params_tree<-expand.grid(
-    # max_depth=c(4,6,10),
-    max_depth=10,
-    # eta=c(0.02,0.01,0.005),
-    eta=0.02,
+    max_depth=c(4,6,10),
+    # max_depth=10,
+    eta=c(0.3,0.1,0.02,0.01),
+    # eta=0.02,
     min_child_weight=1,
     subsample=0.8,
     colsample_bytree=0.8, 
-    gamma=1
+    gamma=c(1,5)
   )
   
   verb<-TRUE
@@ -331,7 +330,7 @@ for(grp in 1:2){
   }
   
   # save results
-  gbm_out<-list(valid_out=rbind(valid_cv,valid),
+  gbm_out<-list(valid_out=valid,
                 model=xgb_tune,
                 var_imp=var_imp,
                 part_eff=part_eff_topk,
@@ -340,7 +339,7 @@ for(grp in 1:2){
   out_grp[[paste0("grp",grp)]]<-gbm_out
 }
 
-saveRDS(out_grp,file="./output/subgrp_analysis.rda")
+saveRDS(out_grp,file="./output/subgrp_analysis_gbm.rda")
 # saveRDS(out_grp,file="./output/subgrp_analysis_w_lac.rda")
 
 

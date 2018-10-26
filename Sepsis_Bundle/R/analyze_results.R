@@ -155,10 +155,9 @@ for(grp in 1:2){
 
   fs_all %<>% bind_rows(out_grp[[paste0("grp",grp)]]$var_imp %>%
                         dplyr::mutate(subgrp=grp))
-    
   
-  fs20_part %<>% bind_rows(out_grp[[paste0("grp",grp)]]$part_eff %>%
-                             dplyr::mutate(subgrp=grp))
+  # fs20_part %<>% bind_rows(out_grp[[paste0("grp",grp)]]$part_eff %>%
+  #                            dplyr::mutate(subgrp=grp))
     
 }
 
