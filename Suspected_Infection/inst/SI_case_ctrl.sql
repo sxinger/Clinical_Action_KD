@@ -59,7 +59,8 @@ select cc.patient_num
 from case_ctrl cc
 left join nonED_enc noned
 on cc.patient_num = noned.patient_num and 
-   cc.encounter_num = noned.encounter_num
+   cc.encounter_num = noned.encounter_num and
+   noned.rn = 1
 
 
 
