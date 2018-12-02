@@ -80,7 +80,7 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|FLO_MEAS_ID+hash","KUH|FLO_MEAS_ID+LINE")){
     data_i<-chk_i %>%
       dplyr::mutate(TVAL_CHAR=gsub(".*_","",CONCEPT_CD),
-             VARIABLE=gsub("_","",str_extract(CONCEPT_CD,"_[0-9]+$"))) %>%
+                    VARIABLE=gsub("_","",str_replace(CONCEPT_CD,"_[0-9]+$",""))) %>%
       dplyr::mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,CASE_CTRL) %>% 
       unique
@@ -131,8 +131,8 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
                   pos_p_wo=pos_wo/enc_wo) %>%
     dplyr::mutate(odds_ratio_emp=round(pos_p_wi/pos_p_wo,2),
                   log_odds_ratio_sd=sqrt(1/pos_wi+1/pos_wo+1/neg_wi+1/neg_wo)) %>%
-    dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp-1.96*log_odds_ratio_sd)),
-                  odds_ratio_emp_low=exp(log(odds_ratio_emp+1.96*log_odds_ratio_sd)))
+    dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp)-1.96*log_odds_ratio_sd),
+                  odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd))
   
   #--stack results
   data_at_enc %<>% bind_rows(data_i)
