@@ -14,22 +14,42 @@ require_libraries<-function(package_list){
   }
 }
 
-connect_to_db<-function(DBMS_type,config_file){
+connect_to_db<-function(DBMS_type,driver_type=c("OCI","JDBC"),config_file){
+  if(is.null(driver_type)){
+    stop("must specify type of database connection driver!")
+  }
+  
   if(DBMS_type=="Oracle"){
-    require_libraries("ROracle")
-    conn<-dbConnect(ROracle::Oracle(),
-                    config_file$username,
-                    config_file$password,
-                    file.path(config_file$access,config_file$sid))
+    if(driver_type=="OCI"){
+      require_libraries("ROracle")
+      conn<-dbConnect(ROracle::Oracle(),
+                      config_file$username,
+                      config_file$password,
+                      file.path(config_file$access,config_file$sid))
+    }else if(driver_type=="JDBC"){
+      require_libraries("RJDBC")
+      # make sure ojdbc6.jar is in the AKI_CDM folder
+      # Source: https://www.r-bloggers.com/connecting-r-to-an-oracle-database-with-rjdbc/
+      drv<-JDBC(driverClass="oracle.jdbc.OracleDriver",
+                classPath="./ojdbc6.jar")
+      url <- paste0("jdbc:oracle:thin:@", config_file$access,":",config_file$sid)
+      conn <- RJDBC::dbConnect(drv, url, 
+                               config_file$username, 
+                               config_file$password)
+    }else{
+      stop("The driver type is not currently supported!")
+    }
     
   }else if(DBMS_type=="tSQL"){
     require_libraries("RJDBC")
-    # need to download sqljdbc.jar and put it AKI_CDM folder
-    drv <- JDBC("com.microsoft.sqlserver.jdbc.SQLServerDriver","./sqljdbc.jar", "`")
-    url = paste0("jdbc:sqlserver:", config_file$access,
-                 ";DatabaseName=",config_file$cdm_db_name,
-                 ";username=",config_file$username,
-                 ";password=",config_file$password)
+    # make sure sqljdbc.jar is in the AKI_CDM folder
+    drv <- JDBC(driverClass="com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                classPath="./sqljdbc.jar",
+                identifier.quote="`")
+    url <- paste0("jdbc:sqlserver:", config_file$access,
+                  ";DatabaseName=",config_file$cdm_db_name,
+                  ";username=",config_file$username,
+                  ";password=",config_file$password)
     conn <- dbConnect(drv, url)
     
   }else if(DBMS_type=="PostgreSQL"){
@@ -48,6 +68,7 @@ connect_to_db<-function(DBMS_type,config_file){
     stop("the DBMS type is not currectly supported!")
   }
   attr(conn,"DBMS_type")<-DBMS_type
+  attr(conn,"driver_type")<-driver_type
   return(conn)
 }
 
@@ -55,7 +76,7 @@ connect_to_db<-function(DBMS_type,config_file){
 ## parse Oracle sql lines
 parse_sql<-function(file_path,...){
   param_val<-list(...)
-  
+
   #read file
   con<-file(file_path,"r")
   
@@ -85,8 +106,9 @@ parse_sql<-function(file_path,...){
       params<-gsub(",","",strsplit(trimws(gsub("(/\\*params\\:\\s)","",line),"both")," ")[[1]])
       params_symbol<-params
       #normalize the parameter names
-      params[params=="@dblink"]<-"cdm_db_link"
-      params[params=="&&dbname"]<-"cdm_db_name"
+      params[params=="@dblink"]<-"db_link"
+      params[params=="&&dbname"]<-"db_name"
+      params[params=="&&i2b2"]<-"i2b2_db_schema"
       params[params=="&&PCORNET_CDM"]<-"cdm_db_schema"
       params[params=="&&start_date"]<-"start_date"      
       params[params=="&&end_date"]<-"end_date"   
@@ -103,7 +125,7 @@ parse_sql<-function(file_path,...){
     }
   }
   close(con)
-  
+
   #update parameters as needed
   if(params_ind){
     #align param_val with params
@@ -114,12 +136,13 @@ parse_sql<-function(file_path,...){
     param_val<-param_val[which(names(param_val) %in% params)]
     param_val<-param_val[order(names(param_val))]
     params_symbol<-params_symbol[order(params)]
+    params<-params[order(params)]
 
     #substitube params_symbol by param_val
     for(i in seq_along(params)){
       sql_string<-gsub(params_symbol[i],
                        ifelse(is.null(param_val[[i]])," ",
-                              ifelse(params[i]=="cdm_db_link",
+                              ifelse(params[i]=="db_link",
                                      paste0("@",param_val[[i]]),
                                      ifelse(params[i] %in% c("start_date","end_date"),
                                             paste0("'",param_val[[i]],"'"),
@@ -141,18 +164,44 @@ parse_sql<-function(file_path,...){
 
 ## execute single sql snippet
 execute_single_sql<-function(conn,statement,write,table_name){
+  DBMS_type<-attr(conn,"DBMS_type")
+  driver_type<-attr(conn,"driver_type")
+  
   if(write){
     #oracle and sql sever uses different connection driver and different functions are expected for sending queries
     #dbSendQuery silently returns an S4 object after execution, which causes error in RJDBC connection (for sql server)
-    if(attr(conn,"DBMS_type")=="Oracle"){
-      if(dbExistsTable(conn,table_name)){
-        dbSendQuery(conn,paste("drop table",table_name)) #clean up residual table left from last run
+    if(DBMS_type=="Oracle"){
+      if(!(driver_type %in% c("OCI","JDBC"))){
+        stop("Driver type not supported for ",DBMS_type,"!\n")
+      }else{
+        try_tbl<-try(dbGetQuery(conn,paste("select * from",table_name,"where 1=0")),silent=T)
+        if(is.null(attr(try_tbl,"condition"))){
+          if(driver_type=="OCI"){
+            dbSendQuery(conn,paste("drop table",table_name)) #in case there exists same table name
+          }else{
+            dbSendUpdate(conn,paste("drop table",table_name)) #in case there exists same table name
+          }
+        }
+        
+        if(driver_type=="OCI"){
+          dbSendQuery(conn,statement) 
+        }else{
+          dbSendUpdate(conn,statement)
+        }
       }
-      dbSendQuery(conn,statement)
-    }else if(attr(conn,"DBMS_type")=="tSQL"){
-      dbSendUpdate(conn,statement)
+      
+    }else if(DBMS_type=="tSQL"){
+      if(driver_type=="JDBC"){
+        try_tbl<-try(dbGetQuery(conn,paste("select * from",table_name,"where 1=0")),silent=T)
+        if(!grepl("(table or view does not exist)+",tolower(attr(try_tbl,"class")))){
+          dbSendUpdate(conn,paste("drop table",table_name)) #in case there exists same table name
+        }
+        dbSendUpdate(conn,statement)
+      }else{
+        stop("Driver type not supported for ",DBMS_type,"!\n")
+      }
     }else{
-      warning("DBMS type not supported!")
+      stop("DBMS type not supported!")
     }
   }else{
     dat<-dbGetQuery(conn,statement)
@@ -175,6 +224,36 @@ execute_batch_sql<-function(conn,statements,verb,...){
       cat(statements[i],"has been executed and table",
           toupper(sql$tbl_out),"was created.\n")
     }
+  }
+}
+
+
+## clean up intermediate tables
+drop_tbl<-function(conn,table_name){
+  DBMS_type<-attr(conn,"DBMS_type")
+  driver_type<-attr(conn,"driver_type")
+  
+  if(DBMS_type=="Oracle"){
+    # purge is only required in Oracle for completely destroying temporary tables
+    drop_temp<-paste("drop table",table_name,"purge") 
+    if(driver_type=="OCI"){
+      dbSendQuery(conn,drop_temp)
+    }else if(driver_type=="JDBC"){
+      dbSendUpdate(conn,drop_temp)
+    }else{
+      stop("Driver type not supported for ",DBMS_type,"!.\n")
+    }
+    
+  }else if(DBMS_type=="tSQL"){
+    drop_temp<-paste("drop table",table_name)
+    if(driver_type=="JDBC"){
+      dbSendUpdate(conn,drop_temp)
+    }else{
+      stop("Driver type not supported for ",DBMS_type,"!.\n")
+    }
+    
+  }else{
+    warning("DBMS type not supported!")
   }
 }
 
@@ -264,15 +343,20 @@ google_code<-function(code,nlink=1){
 
 ## render report
 render_report<-function(which_report="./report/AKI_CDM_EXT_VALID_p1_QA.Rmd",
-                        DBMS_type,remote_CDM=F){
-  #to avoid <Error in unlockBinding("params", <environment>) : no binding for "params">
-  #a hack to trick r thinking it's in interactive environment
-  unlockBinding('interactive',as.environment('package:base'))
-  assign('interactive',function() TRUE,envir=as.environment('package:base'))
+                        DBMS_type,driver_type,remote_CDM=F,
+                        start_date,end_date=as.character(Sys.Date())){
+  
+  # to avoid <Error in unlockBinding("params", <environment>) : no binding for "params">
+  # a hack to trick r thinking it's in interactive environment --not work!
+  # unlockBinding('interactive',as.environment('package:base'))
+  # assign('interactive',function() TRUE,envir=as.environment('package:base'))
   
   rmarkdown::render(input=which_report,
                     params=list(DBMS_type=DBMS_type,
-                                remote_CDM=remote_CDM),
+                                driver_type=driver_type,
+                                remote_CDM=remote_CDM,
+                                start_date=start_date,
+                                end_date=end_date),
                     output_dir="./output/",
                     knit_root_dir="../")
 }
@@ -299,145 +383,3 @@ long_to_sparse_matrix<-function(df,id,variable,val,binary=FALSE){
   return(x_sparse)
 }
 
-
-
-## compress dataframe into a condensed format
-compress_df<-function(dat,tbl=c("DEMO","VITAL","LAB","DX","PX","MED","DRG"),save=F){
-  if(tbl=="DEMO"){
-    tbl_zip<-dat %>% 
-      filter(key %in% c("AGE","HISPANIC","RACE","SEX")) 
-    
-    idx_map<-tbl_zip %>% dplyr::select(key) %>%
-      mutate(idx=paste0("demo",dense_rank(key))) %>% 
-      unique %>% arrange(idx)
-    
-    tbl_zip %<>%
-      spread(key,value,fill=0) %>% #impute 0 for alignment
-      unite("fstr",c("AGE","HISPANIC","RACE","SEX"),sep="_")
-  }else if(tbl=="VITAL"){
-    tbl_zip<-dat %>%
-      filter(key %in% c("HT","WT","BMI",
-                        "BP_SYSTOLIC","BP_DIASTOLIC",
-                        "SMOKING","TOBACCO","TOBACCO_TYPE")) %>%
-      mutate(key=recode(key,
-                        HT="1HT",
-                        WT="2WT",
-                        BMI="3BMI",
-                        SMOKING="4SMOKING",
-                        TOBACCO="5TOBACCO",
-                        TOBACCO_TYPE="6TOBACCO_TYPE",
-                        BP_SYSTOLIC="7BP_SYSTOLIC",
-                        BP_DIASTOLIC="8BP_DIASTOLIC")) %>%
-      mutate(add_time=difftime(timestamp,format(timestamp,"%Y-%m-%d"),units="mins")) %>%
-      mutate(dsa=dsa+round(as.numeric(add_time)/(24*60),2)) %>%
-      arrange(key,dsa) 
-    
-    idx_map<-tbl_zip %>% dplyr::select(key) %>%
-      mutate(idx=paste0("vital",dense_rank(key))) %>% 
-      unique %>% arrange(idx)
-    
-    tbl_zip %<>% unique %>%
-      unite("val_date",c("value","dsa"),sep=",") %>%
-      group_by(ENCOUNTERID,key) %>%
-      dplyr::summarize(fstr=paste(val_date,collapse=";")) %>%
-      ungroup %>%
-      spread(key,fstr,fill=0) %>% #impute 0 for alignment
-      unite("fstr",c("1HT","2WT","3BMI",
-                     "4SMOKING","5TOBACCO","6TOBACCO_TYPE",
-                     "7BP_SYSTOLIC","8BP_DIASTOLIC"),sep="_")
-  }else if(tbl=="LAB"){
-    tbl_zip<-dat %>%
-      mutate(idx=paste0("lab",dense_rank(key)))
-    
-    idx_map<-tbl_zip %>% dplyr::select(key,idx) %>%
-      unique %>% arrange(idx)
-    
-    tbl_zip %<>%
-      arrange(ENCOUNTERID,idx,dsa) %>%
-      unite("val_unit_date",c("value","unit","dsa"),sep=",") %>%
-      group_by(ENCOUNTERID,idx) %>%
-      dplyr::summarize(fstr=paste(val_unit_date,collapse=";")) %>%
-      ungroup %>%
-      unite("fstr2",c("idx","fstr"),sep=":") %>%
-      group_by(ENCOUNTERID) %>%
-      dplyr::summarize(fstr=paste(fstr2,collapse="_")) %>%
-      ungroup
-  }else if(tbl=="DRG"){
-    tbl_zip<-dat %>%
-      mutate(idx=paste0("dx",dense_rank(key2))) 
-    
-    idx_map<-tbl_zip %>% dplyr::select(key2,idx) %>%
-      unique %>% arrange(idx) %>% dplyr::rename(key=key2)
-    
-    tbl_zip %<>%
-      group_by(ENCOUNTERID,key1,idx) %>%
-      dplyr::summarize(dsa=paste(dsa,collapse=",")) %>%
-      ungroup %>%
-      unite("fstr",c("idx","dsa"),sep=":") %>%
-      group_by(ENCOUNTERID,key1) %>%
-      dplyr::summarize(fstr=paste(fstr,collapse="_")) %>%
-      ungroup %>%
-      spread(key1,fstr,fill=0) %>%
-      unite("fstr",c("ADMIT_DRG","COMMORB_DRG"),sep="|") %>%
-      unique
-  }else if(tbl=="DX"){
-    tbl_zip<-dat %>%
-      group_by(ENCOUNTERID,key) %>%
-      arrange(dsa) %>%
-      dplyr::summarize(dsa=paste(dsa,collapse=",")) %>%
-      ungroup %>%
-      mutate(idx=paste0("ccs",key))
-    
-    idx_map<-tbl_zip %>% dplyr::select(key,idx) %>%
-      unique %>% arrange(key)
-    
-    tbl_zip %<>%
-      unite("fstr",c("idx","dsa"),sep=":") %>%
-      group_by(ENCOUNTERID) %>%
-      dplyr::summarize(fstr=paste(fstr,collapse="_")) %>%
-      ungroup %>% unique
-  }else if(tbl=="PX"){
-    tbl_zip<-dat %>%
-      mutate(idx=paste0("px",dense_rank(key))) 
-    
-    idx_map<-tbl_zip %>% dplyr::select(key,idx) %>%
-      unique %>% arrange(idx)
-    
-    tbl_zip %<>%
-      group_by(ENCOUNTERID,idx) %>%
-      arrange(dsa) %>%
-      dplyr::summarize(dsa=paste(dsa,collapse=",")) %>%
-      ungroup %>%
-      unite("fstr",c("idx","dsa"),sep=":") %>%
-      group_by(ENCOUNTERID) %>%
-      dplyr::summarize(fstr=paste(fstr,collapse="_")) %>%
-      ungroup %>% unique
-  }else if(tbl=="MED"){
-    tbl_zip<-dat %>%
-      mutate(idx=paste0("med",dense_rank(key))) 
-    
-    idx_map<-tbl_zip %>% dplyr::select(key,idx) %>%
-      unique %>% arrange(idx)
-    
-    tbl_zip %<>%
-      transform(value=strsplit(value,","),
-                dsa=strsplit(dsa,",")) %>%
-      unnest %>%
-      unite("val_date",c("value","dsa"),sep=",") %>%
-      group_by(ENCOUNTERID,idx) %>%
-      dplyr::summarize(fstr=paste(val_date,collapse=";")) %>%
-      ungroup %>%
-      unite("fstr2",c("idx","fstr"),sep=":") %>%
-      group_by(ENCOUNTERID) %>%
-      dplyr::summarize(fstr=paste(fstr2,collapse="_")) %>%
-      ungroup
-  }else{
-    warning("data elements not considered!")
-  }
-  if(save){
-    save(tbl_zip,file=paste0("./data/",tbl,"_zip.Rdata"))
-  }
-  
-  zip_out<-list(tbl_zip=tbl_zip,idx_map=idx_map)
-  return(zip_out)
-}

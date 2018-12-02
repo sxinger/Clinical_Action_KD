@@ -1,4 +1,4 @@
-#### Determine censor points for controls ####
+#### load data in chunks ####
 ##========prepare
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
@@ -10,44 +10,15 @@ require_libraries(c( "dplyr"
                      ,"ROracle"
                      ,"DBI"))
 
-config_file<-read.csv('../config.csv')
-conn<-connect_to_db("Oracle",config_file)
+config_file<-read.csv('./config.csv')
+conn<-connect_to_db("Oracle","OCI",config_file)
 
-##=======load cohort
-dat<-dbGetQuery(conn,"select * from SI_CASE_CONTROL")
-N<-length(unique(dat$ENCOUNTER_NUM))
-# saveRDS(dat,file="./data/SI_initial.rda")
+##=======load cohort=======
+enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL")
+N<-length(unique(enroll$ENCOUNTER_NUM))
+saveRDS(enroll,file="./data/SI_enroll.rda")
 
-
-##=======load SI_ServDep for identifying transtion of department
-servdep<-dbGetQuery(conn,"select * from SI_ServDep") %>%
-  filter(DAYS_SINCE_TRIAGE>=0) %>%
-  dplyr::select(ENCOUNTER_NUM,SERVDEP_NAME,DAYS_SINCE_TRIAGE) %>%
-  left_join(readRDS("./data/SI_initial.rda") %>%
-              dplyr::select(ENCOUNTER_NUM,TRIAGE_START,SI_SINCE_TRIAGE),
-            by = "ENCOUNTER_NUM") %>%
-  unique %>%
-  group_by(ENCOUNTER_NUM) %>%
-  arrange(DAYS_SINCE_TRIAGE) %>%
-  dplyr::mutate(servdep_lag=lag(SERVDEP_NAME,n=1L)) %>%
-  ungroup %>%
-  mutate(ED_prev=ifelse(grepl("(Emergency)+",servdep_lag),1,
-                        ifelse(is.na(servdep_lag),0,-1))) %>%
-  group_by(ENCOUNTER_NUM) %>%
-  arrange(desc(ED_prev)) %>% dplyr::slice(1:1) %>%
-  ungroup %>%
-  mutate(time_bd=ifelse(!is.na(SI_SINCE_TRIAGE),SI_SINCE_TRIAGE,
-                        case_when(ED_prev==0 ~ Inf,
-                                  ED_prev==1 ~ DAYS_SINCE_TRIAGE)),
-         real=ifelse(!is.na(SI_SINCE_TRIAGE),1,0)) %>%
-  dplyr::select(ENCOUNTER_NUM,real,time_bd) %>%
-  unique
-
-#--save data
-saveRDS(servdep,file="./data/define_censor.rda")
-
-
-##======================================load data at encounter===========================================#
+##=======load data at encounter=========
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_AT_ENC")
 chunk_id %<>% 
   filter(!CONCEPT_PREFIX %in% c("KUH|HOSP_ADT_CLASS",
@@ -58,51 +29,45 @@ chunk_id %<>%
                                 "KUH|ED_EPISODE"))
 
 data_at_enc<-c()
+feat_at_enc<-c()
 for(i in seq_along(chunk_id)){
   start_i<-Sys.time()
   
   chk_i<-dbGetQuery(conn,
                     paste0("select * from SI_OBS_AT_ENC where CONCEPT_PREFIX ='",
                            chunk_id$CONCEPT_PREFIX[i],"'"))
-  
-  #--pre-filter: time
-  data_i_o<-chk_i %>%
-    dplyr::select(ENCOUNTER_NUM,CONCEPT_CD,NVAL_NUM,UNITS_CD,TVAL_CHAR,
-                  MODIFIER_CD,START_SINCE_TRIAGE) %>%
-    inner_join(servdep,by="ENCOUNTER_NUM") %>%
-    filter(START_SINCE_TRIAGE < time_bd) #strictly less than
-  
+
   #--re-construct variables
   if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|MEDICATION_ID")){
-    data_i<-data_i_o %>%
+    data_i<-chk_i %>%
       filter(is.na(NVAL_NUM) & is.na(UNITS_CD)) %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique %>%
-      bind_rows(data_i_o %>%
+      bind_rows(chk_i %>%
                   filter(is.na(NVAL_NUM) & !is.na(UNITS_CD)) %>%
                   unite("UNIT_MOD",c("UNITS_CD","MODIFIER_CD")) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNIT_MOD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
                   dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
                   unique) %>%
-      bind_rows(data_i_o %>%
+      bind_rows(chk_i %>%
                   filter(!is.na(NVAL_NUM)) %>%
                   unite("VARIABLE",c("CONCEPT_CD","UNITS_CD","MODIFIER_CD"),sep="@") %>%
                   mutate(NVAL_NUM=1) %>%
                   dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
                   unique)
-  
+    
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|DI","KUH|DX_ID","KUH|PROC_ID")){
-    data_i<-data_i_o %>%
+    data_i<-chk_i %>%
       unite("VARIABLE",c("CONCEPT_CD","MODIFIER_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|COMPONENT_ID")){
-    data_i<-data_i_o %>%
+    data_i<-chk_i %>%
       filter(MODIFIER_CD!="@") %>%
       unite("VARIABLE",c("CONCEPT_CD","UNITS_CD"),sep="@") %>%
       mutate(NVAL_NUM=1) %>%
@@ -110,7 +75,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|FLO_MEAS_ID+hash","KUH|FLO_MEAS_ID+LINE")){
-    data_i<-data_i_o %>%
+    data_i<-chk_i %>%
       mutate(TVAL_CHAR=gsub(".*_","",CONCEPT_CD),
              VARIABLE=gsub("_","",str_extract(CONCEPT_CD,"_[0-9]+$"))) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
@@ -118,7 +83,7 @@ for(i in seq_along(chunk_id)){
       unique
     
   }else{
-    data_i<-data_i_o %>%
+    data_i<-chk_i %>%
       mutate(TVAL_CHAR=CONCEPT_CD) %>%
       mutate(NVAL_NUM=ifelse(is.na(NVAL_NUM),1,NVAL_NUM)) %>%
       dplyr::select(ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,real) %>% 
@@ -174,7 +139,7 @@ for(i in seq_along(chunk_id)){
 }
 
 
-#=====pre-filter: frequency
+#=====pre-filter: frequency (0.5%)
 freq_filter_rt<-0.005
 data_at_enc %<>% 
   dplyr::select(-real) %>%
@@ -187,8 +152,8 @@ saveRDS(data_at_enc,file="./data/data_at_enc.rda")
 saveRDS(feat_at_enc,file="./data/feat_at_enc.rda")
 
 
-##======================================load data before encounter===========================================#
-rm(data_at_enc,feat_at_enc,servdep); gc()
+##=======load data before encounter================
+rm(data_at_enc,feat_at_enc); gc()
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_BEF_ENC")
 
 data_bef_enc<-c()
@@ -199,7 +164,7 @@ for(i in seq_along(chunk_id)){
   chk_i<-dbGetQuery(conn,
                     paste0("select * from SI_OBS_BEF_ENC where CONCEPT_PREFIX ='",
                            chunk_id$CONCEPT_PREFIX[i],"'"))
-
+  
   #--re-construct variables
   if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|MEDICATION_ID")){
     data_i<-chk_i %>%
@@ -320,7 +285,4 @@ data_bef_enc %<>%
 #========save data
 saveRDS(data_bef_enc,file="./data/data_bef_enc.rda")
 saveRDS(feat_bef_enc,file="./data/feat_bef_enc.rda")
-
-
-
 
