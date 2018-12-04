@@ -9,8 +9,8 @@ rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
 source("./R/util.R")
-library("Matrix")
-require_libraries(c("dplyr",
+require_libraries(c("Matrix",
+                    "dplyr",
                     "tidyr",
                     "plyr",
                     "magrittr", 
@@ -19,10 +19,9 @@ require_libraries(c("dplyr",
 ## Load in fact_stack and pat_tbl
 data_at_enc<-readRDS("./data/data_at_enc.rda")
 feat_at_enc<-readRDS("./data/feat_at_enc.rda")
-target<-readRDS("./data/define_censor.rda")
+cohort<-readRDS("./data/SI_enroll.rda")
 
-
-## latest values
+## use latest values
 data_at_enc_latest %<>%
   group_by(ENCOUNTER_NUM,VARIABLE) %>%
   arrange(desc(START_SINCE_TRIAGE)) %>%

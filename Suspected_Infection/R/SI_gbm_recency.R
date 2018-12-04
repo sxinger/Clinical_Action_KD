@@ -3,8 +3,7 @@ rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
 source("./R/util.R")
-library("Matrix") 
-require_libraries(c(
+require_libraries(c("Matrix",
                     "dplyr",
                     "tidyr",
                     "plyr",
@@ -16,7 +15,7 @@ require_libraries(c(
 
 ##==============load data
 data_at_enc<-readRDS("./data/data_at_enc.rda")
-target<-readRDS("./data/target_sidx.rda")
+ridx<-readRDS("./data/rand_sidx.rda")
 
 ##=============feature aggregation 
 x_mt<-data_at_enc %>%

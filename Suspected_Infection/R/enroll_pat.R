@@ -85,7 +85,8 @@ execute_single_sql(conn,
 ##---collect clinical facts before encounter
 sql<-parse_sql(paste0("./inst/collect_fact_bef_enc.sql"),
                db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema)
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date)
 
 execute_single_sql(conn,
                    statement=sql$statement,

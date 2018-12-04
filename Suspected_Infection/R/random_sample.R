@@ -3,8 +3,7 @@ rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
 source("./R/util.R")
-library("Matrix")
-require_libraries(c(
+require_libraries(c("Matrix",
                     "dplyr",
                     "tidyr",
                     "plyr",
@@ -13,13 +12,10 @@ require_libraries(c(
                   ))
 
 ## load data
-target<-readRDS("./data/define_censor.rda")
-
-## assigne sampling indices
-target %<>% 
+cohort<-readRDS("./data/SI_enroll.rda") %>%
   dplyr::mutate(part73 = sample(c("T","V"),prob=c(0.7,0.3),n(),replace=T),
                 cv10 = sample(1:10,n(),replace=T))
 
 ## save result
-saveRDS(target,file="./data/target_sidx.rda")
+saveRDS(cohort,file="./data/rand_idx.rda")
 
