@@ -1,9 +1,3 @@
-###########################################################
-# This script preprocessed the selected variables, by     #
-# - selecting observations before certain perdiction point#
-# - aggregating multiple values for the same variable     #
-# - encoding categorical variables                        #
-
 #### Preprocessing ####
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
@@ -14,17 +8,52 @@ require_libraries(c("Matrix",
                     "tidyr",
                     "plyr",
                     "magrittr", 
-                    "stringr"))
+                    "stringr",                    
+                    "h2o"
+))
 
-## Load in fact_stack and pat_tbl
-data_at_enc<-readRDS("./data/data_at_enc.rda")
-feat_at_enc<-readRDS("./data/feat_at_enc.rda")
-cohort<-readRDS("./data/SI_enroll.rda")
+##==============load data==============
+data_at_enc<-readRDS("./data/data_at_enc_discrt.rda")
+# data_bef_enc<-readRDS("./data/data_bef_enc.rda")
+rs_idx<-readRDS("./data/rand_idx.rda")
 
-## use latest values
-data_at_enc_latest %<>%
+
+#===============filter====================
+# cd_out<-c("KUH\\|DX_ID","ICD","KUH\\|PROC_ID")
+# data_at_enc %<>%
+#   filter(!grepl(paste0("(",paste(cd_out,collapse=")|("),")"),VARIABLE))
+
+
+##==============feature aggregation: recency=========
+x_mt<-data_at_enc %>%
   group_by(ENCOUNTER_NUM,VARIABLE) %>%
   arrange(desc(START_SINCE_TRIAGE)) %>%
-  dplyr::slice(1:1) %>%
+  dplyr::slice(1:1) %>% ## latest values
   ungroup %>%
-  long_to_sparse_matrix()
+  mutate(VARIABLE=case_when(grepl("(FLO_MEAS_ID\\+hash)|(FLO_MEAS_ID\\+LINE)+",VARIABLE) ~ paste0(VARIABLE,"_",TVAL_CHAR),
+                            grepl("(VISITDETAIL\\|POS)+",VARIABLE) ~ paste0(VARIABLE,":",TVAL_CHAR),
+                            grepl("num_",VARIABLE) ~ TVAL_CHAR,
+                            TRUE ~ VARIABLE)) %>%
+  long_to_sparse_matrix(.,
+                        id="ENCOUNTER_NUM",
+                        variable="VARIABLE",
+                        val="NVAL_NUM",
+                        binary=T)
+dim(x_mt)
+# [1] 464765   4178
+
+y_mt<-rs_idx %>% 
+  semi_join(data_at_enc,by="ENCOUNTER_NUM") %>%
+  arrange(ENCOUNTER_NUM)
+
+mean(y_mt$CASE_CTRL) #12%
+
+all(row.names(x_mt)==y_mt$ENCOUNTER_NUM) #alignment check
+
+Xy_sparse<-list(x_mt=x_mt,y_mt=y_mt)
+saveRDS(Xy_sparse,"./data/Xy_sp_rec.rda")
+
+
+##==============feature aggregation: ==============
+
+

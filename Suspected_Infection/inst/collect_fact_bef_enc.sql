@@ -25,12 +25,14 @@ from SI_case_ctrl tr
 join &&i2b2data.observation_fact@dblink obs
 on tr.patient_num = obs.patient_num
 where obs.start_date < tr.triage_start and
-      (obs.concept_cd like 'KUH|MEDICATION_ID%' or
-       obs.concept_cd like 'NDC%' or
-       obs.concept_cd like 'CPT%' or
+      (obs.concept_cd like 'CPT%' or
        obs.concept_cd like 'KUH|DX_ID%' or
        obs.concept_cd like 'ICD%' or
-       obs.concept_cd like 'KUH|PAT_ENC%') and
+       obs.concept_cd like 'KUH|PAT_ENC%' or
+       ((obs.concept_cd like 'KUH|MEDICATION_ID%' or 
+         obs.concept_cd like 'NDC%') and 
+        obs.modifier_cd in ('MedObs:Dispensed','MedObs:Historical','MedObs|MAR:Given',
+                            'Surescripts:Amount','Surescripts:Days Supply','Surescripts|Status:Claim','Surescripts|Status:Fill'))) and
       obs.start_date >= Date &&start_date and
       obs.start_date >= tr.triage_start - 365.25
 

@@ -12,10 +12,10 @@ require_libraries(c("Matrix",
                   ))
 
 ## load data
-cohort<-readRDS("./data/SI_enroll.rda") %>%
+rs_idx<-readRDS("./data/SI_enroll.rda") %>%
   dplyr::mutate(part73 = sample(c("T","V"),prob=c(0.7,0.3),n(),replace=T),
                 cv10 = sample(1:10,n(),replace=T))
 
 ## save result
-saveRDS(cohort,file="./data/rand_idx.rda")
+saveRDS(rs_idx,file="./data/rand_idx.rda")
 
