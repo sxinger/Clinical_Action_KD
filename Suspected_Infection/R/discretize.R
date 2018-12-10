@@ -29,13 +29,40 @@ data_at_enc_discrt<-data_at_enc %>%
                                     NVAL_NUM > q_15 ~ "high",
                                     TRUE ~ "miss")) %>%
   ungroup %>%
-  unite("TVAL_CHAR",c("VARIABLE","NVAL_NUM2"),sep="_") %>%
+  mutate(VARIABLE2=VARIABLE) %>%
+  unite("TVAL_CHAR",c("VARIABLE2","NVAL_NUM2"),sep="_") %>%
   dplyr::mutate(VARIABLE=paste0("num_",VARIABLE)) %>%
-  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE,CASE_CTRL)
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
-data_at_enc<-data_at_enc %>%
-  anti_join(data_at_enc_discrt,by="VARIABLE") %>%
+data_at_enc %<>%
+  anti_join(num_var,by="VARIABLE") %>%
   bind_rows(data_at_enc_discrt)
 
+
+#======attach discretized age=====
+pat_at_enc<-readRDS("./data/pat_at_enc.rda")
+age_discrt<-pat_at_enc %>%
+  mutate(AGE_GRP=case_when(AGE<30 ~ "20s",
+                           AGE>=30 & AGE <40 ~ "30s",
+                           AGE>=40 & AGE <50 ~ "40s",
+                           AGE>=50 & AGE <60 ~ "60s",
+                           AGE>=60 & AGE <70 ~ "70s",
+                           AGE>=70 & AGE <80 ~ "60s",
+                           AGE>=80 ~ "80s")) %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,AGE_GRP) %>%
+  gather(VARIABLE,TVAL_CHAR,-ENCOUNTER_NUM,-PATIENT_NUM) %>%
+  mutate(TVAL_CHAR2=TVAL_CHAR) %>%
+  unite("VARIABLE",c("VARIABLE","TVAL_CHAR2")) %>%
+  mutate(NVAL_NUM=1,START_SINCE_TRIAGE=0)
+
+data_at_enc %<>% 
+  filter(VARIABLE!="AGE") %>%
+  filter(!(VARIABLE=="SEX_MALE"&NVAL_NUM==0)) %>%
+  bind_rows(age_discrt)
+
+#========save data
 saveRDS(data_at_enc,file="./data/data_at_enc_discrt.rda")
+
+
+
   

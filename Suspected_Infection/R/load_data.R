@@ -20,6 +20,13 @@ N<-length(unique(enroll$ENCOUNTER_NUM))
 P<-sum(enroll$CASE_CTRL)
 # saveRDS(enroll,file="./data/SI_enroll.rda")
 
+##==============load patient-level data==================
+pat_at_enc<-dbGetQuery(conn,"select * from SI_PAT_AT_ENC")
+
+#========save data
+saveRDS(pat_at_enc,file="./data/pat_at_enc.rda")
+
+
 ##==============load data at encounter================
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_AT_ENC")
 chunk_id %<>% 
@@ -208,20 +215,36 @@ flo_meas_cd<-readRDS("./data/additional_fs_cd.rda")
 feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
   bind_rows(feat_at_enc %>% filter(is.na(NAME_CHAR)) %>%
               dplyr::select(-NAME_CHAR,-CONCEPT_PATH) %>%
-              dplyr::mutate(CODE=gsub(".*:","",CONCEPT_CD)) %>%
+              dplyr::mutate(CODE=gsub("_.*","",gsub(".*:","",CONCEPT_CD))) %>%
               left_join(flo_meas_cd,by="CODE")) %>%
   group_by(VARIABLE,CONCEPT_CD) %>%
   dplyr::slice(1:1) %>%
   ungroup
 
 
-#=====pre-filter: frequency (0.5%)=====
-freq_filter_rt<-0.005
+#=====pre-filter: frequency (5%)=====
+freq_filter_rt<-0.05
 data_at_enc %<>% 
   dplyr::select(-CASE_CTRL) %>%
-  semi_join(feat_at_enc %>% filter(enc_wi >= round(freq_filter_rt*N)),
+  semi_join(feat_at_enc2 %>% filter(enc_wi >= round(freq_filter_rt*N)),
             by="VARIABLE")
 
+#======attach patient level info=====
+data_at_enc<-readRDS("./data/data_at_enc.rda")
+pat_at_enc<-readRDS("./data/pat_at_enc.rda")
+pat_at_enc2<-pat_at_enc %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,AGE,SEX_MALE) %>%
+  gather(VARIABLE,NVAL_NUM,-ENCOUNTER_NUM,-PATIENT_NUM) %>%
+  mutate(TVAL_CHAR=NA,
+         START_SINCE_TRIAGE=0) %>%
+  bind_rows(pat_at_enc %>%
+              dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,RACE,MARRIED_STATUS,RELIGION,LANGUAGE) %>%
+              gather(VARIABLE,TVAL_CHAR,-ENCOUNTER_NUM,-PATIENT_NUM) %>%
+              mutate(TVAL_CHAR2=TVAL_CHAR) %>%
+              unite("VARIABLE",c("VARIABLE","TVAL_CHAR2")) %>%
+              mutate(NVAL_NUM=1,START_SINCE_TRIAGE=0))
+
+data_at_enc %<>% bind_rows(pat_at_enc2)
 
 #========save data
 saveRDS(data_at_enc,file="./data/data_at_enc.rda")

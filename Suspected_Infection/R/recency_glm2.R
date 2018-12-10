@@ -17,6 +17,16 @@ Xy_sparse<-readRDS("./data/Xy_sp_rec.rda")
 x_mt<-Xy_sparse$x_mt
 y_mt<-Xy_sparse$y_mt
 
+
+##==============minimal set exploration=============
+glm_out<-readRDS("./output/glm1_rec_fs2547.rda")
+var_imp<-glm_out$var_imp
+i<-10
+
+x_mt<-x_mt[,which(colnames(x_mt) %in% var_imp$Feature[seq_len(i)])]
+
+
+
 ##================partition==================
 train_mt<-cbind(x_mt[which(y_mt$part73=="T"),],
                 label=y_mt[which(y_mt$part73=="T"),]$CASE_CTRL)
