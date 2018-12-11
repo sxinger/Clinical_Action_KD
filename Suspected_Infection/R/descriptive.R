@@ -1,6 +1,14 @@
 rm(list=ls())
 gc()
 
+setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
+
+source("./R/util.R")
+require_libraries(c( "dplyr"
+                     ,"tidyr"
+                     ,"magrittr"
+                     ,"stringr"))
+
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
 rs_idx<-readRDS("./data/rand_idx.rda")
 
@@ -55,8 +63,50 @@ demo_master2 %>%
   arrange(demo_type,desc(enc_cnt_0)) %>%
   View
 
+#observation time window
+#--si timing
+rs_idx %>%
+  filter(CASE_CTRL==1) %>% 
+  dplyr::mutate(si_loc=case_when(SI_SINCE_TRIAGE<=TRANS_SINCE_TRIAGE|is.na(TRANS_SINCE_TRIAGE)~"ED",
+                                 SI_SINCE_TRIAGE>TRANS_SINCE_TRIAGE ~ SERVDEP_NAME)) %>%
+  group_by(si_loc) %>%
+  dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),
+                   si_min=min(SI_SINCE_TRIAGE,na.rm=T),
+                   si_p05=quantile(SI_SINCE_TRIAGE,probs=0.05,na.rm=T),
+                   si_q1=quantile(SI_SINCE_TRIAGE,probs=0.25,na.rm=T),
+                   si_median=median(SI_SINCE_TRIAGE,na.rm=T),
+                   si_q3=quantile(SI_SINCE_TRIAGE,probs=0.75,na.rm=T),
+                   si_p95=quantile(SI_SINCE_TRIAGE,probs=0.95,na.rm=T),
+                   si_max=max(SI_SINCE_TRIAGE,na.rm=T)) %>%
+  ungroup %>%
+  View
 
+#transfer timing
+rs_idx %>%
+  filter(CASE_CTRL==0) %>% 
+  group_by(SERVDEP_NAME) %>%
+  dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),
+                   si_min=min(TRANS_SINCE_TRIAGE,na.rm=T),
+                   si_p05=quantile(TRANS_SINCE_TRIAGE,probs=0.05,na.rm=T),
+                   si_q1=quantile(TRANS_SINCE_TRIAGE,probs=0.25,na.rm=T),
+                   si_median=median(TRANS_SINCE_TRIAGE,na.rm=T),
+                   si_q3=quantile(TRANS_SINCE_TRIAGE,probs=0.75,na.rm=T),
+                   si_p95=quantile(TRANS_SINCE_TRIAGE,probs=0.95,na.rm=T),
+                   si_max=max(TRANS_SINCE_TRIAGE,na.rm=T)) %>%
+  ungroup %>%
+  View
 
-
+#discharge timing
+rs_idx %>%
+  filter(END_SINCE_TRIAGE==PRED_POINT) %>% 
+  dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),
+                   si_min=min(END_SINCE_TRIAGE,na.rm=T),
+                   si_p05=quantile(END_SINCE_TRIAGE,probs=0.05,na.rm=T),
+                   si_q1=quantile(END_SINCE_TRIAGE,probs=0.25,na.rm=T),
+                   si_median=median(END_SINCE_TRIAGE,na.rm=T),
+                   si_q3=quantile(END_SINCE_TRIAGE,probs=0.75,na.rm=T),
+                   si_p95=quantile(END_SINCE_TRIAGE,probs=0.95,na.rm=T),
+                   si_max=max(END_SINCE_TRIAGE,na.rm=T)) %>%
+  View
 
   
