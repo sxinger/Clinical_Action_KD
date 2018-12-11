@@ -29,7 +29,7 @@ test_mt<-cbind(x_mt[which(y_mt$part73=="V"),],
 h2o.init(nthreads=-1)
 
 ## global parameters
-hyper_params<-list(alpha=c(1,0.5))
+hyper_params<-list(alpha=c(1,0.8,0.5))
 
 pred_idx<-which(!colnames(train_mt) %in% c("label"))
 target_idx<-which(colnames(train_mt)=="label")
@@ -53,7 +53,7 @@ alpha_grid<-h2o.grid(x=pred_idx,
                      nfolds=5,
                      lambda_search=TRUE,
                      early_stopping = TRUE,
-                     standardize = TRUE,
+                     # standardize = TRUE,
                      # missing_values_handling="Skip",
                      remove_collinear_columns=TRUE,
                      keep_cross_validation_predictions =T,
@@ -140,7 +140,7 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-glm_out<-readRDS("./output/glm1_rec_fs2547.rda")
+glm_out<-readRDS("./output/glm1_rec_fs1265.rda")
 var_imp<-glm_out$var_imp
 pROC::ci.auc(glm_out$valid_out$real,glm_out$valid_out$pred)
-# 95% CI: 0.9659-0.9671 (DeLong)
+# 95% CI: 0.9193-0.9218 (DeLong)

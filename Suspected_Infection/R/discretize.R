@@ -62,7 +62,7 @@ data_at_enc %<>%
 
 #========save data
 saveRDS(data_at_enc,file="./data/data_at_enc_discrt.rda")
-
+data_at_enc<-readRDS("./data/data_at_enc_discrt.rda")
 
 
   

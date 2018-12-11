@@ -20,6 +20,9 @@ select tr.patient_num
             else pat.race_cd
        end as race
       ,pat.marital_status_cd married_status
+      ,case when pat.ethnicity_cd in ('declined','@',NULL,'NI') then 'unknown' 
+            else pat.ethnicity_cd 
+       end as ethnicity
       ,case when pat.religion_cd in ('declined','@',NULL) then 'unknown' 
             else pat.religion_cd 
        end as religion

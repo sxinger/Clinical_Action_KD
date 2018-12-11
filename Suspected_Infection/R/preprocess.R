@@ -26,18 +26,31 @@ cd_out<-c("KUMC\\|VISITDETAIL\\|POS\\(O2\\)",
           "KUH\\|FLO_MEAS_ID\\:12265",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:9275",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:8449",
-          "KUH\\|FLO_MEAS_ID\\+LINE\\:9045")
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:9045",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:6936",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:6937",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:6938",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:7276",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:7210",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:7290",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:1804",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:2526",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:1601",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:16029",
+          "KUH\\|FLO_MEAS_ID\\+hash\\:301310")
 data_at_enc %<>%
   filter(!grepl(paste0("(",paste(cd_out,collapse=")|("),")"),VARIABLE))
 
 
 ##==============feature aggregation: recency=========
 x_mt<-data_at_enc %>%
+  #filter first
   group_by(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE) %>%
   arrange(desc(START_SINCE_TRIAGE)) %>%
   dplyr::slice(1:1) %>% ## latest values
   ungroup %>%
   unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
+  #then tranform
   mutate(VARIABLE=case_when(grepl("(FLO_MEAS_ID\\+hash)|(FLO_MEAS_ID\\+LINE)+",VARIABLE) ~ paste0(VARIABLE,"_",TVAL_CHAR),
                             grepl("(VISITDETAIL\\|POS)+",VARIABLE) ~ paste0(VARIABLE,":",TVAL_CHAR),
                             grepl("num_",VARIABLE) ~ TVAL_CHAR,
@@ -48,14 +61,14 @@ x_mt<-data_at_enc %>%
                         val="NVAL_NUM",
                         binary=T)
 dim(x_mt)
-# [1] 465259   5088
+# [1] 498467   1584
 
 y_mt<-rs_idx %>% 
   semi_join(data_at_enc,by="ENCOUNTER_NUM") %>%
-  arrange(PATIENT_NUM,ENCOUNTER_NUM) %>%
   unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
+  arrange(PAT_ENC)
   
-mean(y_mt$CASE_CTRL) #13%
+mean(y_mt$CASE_CTRL) #12%
 
 all(row.names(x_mt)==y_mt$PAT_ENC) #alignment check
 

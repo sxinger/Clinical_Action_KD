@@ -54,19 +54,19 @@ select 'nonSI_discharge_at_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
-where  si_since_triage is null and trans_since_triage is not null
+where  si_since_triage is null and trans_since_triage is null
 union all
 select 'nonSI_transtion_from_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
-where si_since_triage is null and trans_since_triage is null
+where si_since_triage is null and trans_since_triage is not null
 union all
 select ('nonSI_transtion_from_ED_to_' || ServDep_name) CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
-where si_since_triage is null and trans_since_triage is null
+where si_since_triage is null and trans_since_triage is not null
 group by ServDep_name
 
 
