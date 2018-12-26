@@ -12,7 +12,6 @@ require_libraries(c( "dplyr"
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
 rs_idx<-readRDS("./data/rand_idx.rda")
 
-#
 demo_master<-pat_at_enc %>%
   left_join(rs_idx %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
             by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
@@ -26,7 +25,7 @@ demo_master %<>%
                            AGE>=60 & AGE <70 ~ "70s",
                            AGE>=70 & AGE <80 ~ "60s",
                            AGE>=80 ~ "80s"))
-#age in numeric
+#--age in numeric
 demo_master %>%
   dplyr::select(AGE,CASE_CTRL) %>%
   group_by(CASE_CTRL) %>%
@@ -34,7 +33,7 @@ demo_master %>%
                    age_sd=sd(AGE,na.rm=T)) %>%
   ungroup %>% View
 
-#other categorical
+#--other categorical
 demo_master2<-demo_master %>%
   dplyr::select(-AGE,-DEATH_DATE) %>%
   gather(demo_type,demo_val,-PATIENT_NUM,-ENCOUNTER_NUM,-CASE_CTRL) %>%
@@ -81,7 +80,7 @@ rs_idx %>%
   ungroup %>%
   View
 
-#transfer timing
+#--transfer timing
 rs_idx %>%
   filter(CASE_CTRL==0) %>% 
   group_by(SERVDEP_NAME) %>%
@@ -96,7 +95,7 @@ rs_idx %>%
   ungroup %>%
   View
 
-#discharge timing
+#--discharge timing
 rs_idx %>%
   filter(END_SINCE_TRIAGE==PRED_POINT) %>% 
   dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),

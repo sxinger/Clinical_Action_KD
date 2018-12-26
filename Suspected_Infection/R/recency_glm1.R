@@ -84,6 +84,7 @@ valid<-data.frame(ENCOUNTER_NUM = row.names(test_mt),
 
 ##============================= variable importance
 feat_dict<-readRDS("./data/feat_at_enc.rda") %>%
+  bind_rows(readRDS("./data/feat_bef_enc.rda")) %>%
   dplyr::select(VARIABLE,CONCEPT_CD,NAME_CHAR,CONCEPT_PATH,enc_wi,odds_ratio_emp)
 
 var_imp<-h2o.varimp(alpha_opt_model) %>%
@@ -131,6 +132,7 @@ glm_out<-list(valid_out=rbind(valid_cv,valid),
               var_imp=var_imp2,
               hyper_param=alpha_opt)
 
+pROC::ci.auc(valid$real,valid$pred)
 k<-nrow(var_imp)
 saveRDS(glm_out,file=paste0("./output/glm1_rec_fs",k,".rda"))
 
@@ -140,7 +142,8 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-glm_out<-readRDS("./output/glm1_rec_fs1265.rda")
+glm_out<-readRDS("./output/glm1_rec_fs1543.rda")
 var_imp<-glm_out$var_imp
-pROC::ci.auc(glm_out$valid_out$real,glm_out$valid_out$pred)
+valid<-glm_out$valid_out %>% filter(valid_type=="V")
+pROC::ci.auc(valid$real,valid$pred)
 # 95% CI: 0.9193-0.9218 (DeLong)

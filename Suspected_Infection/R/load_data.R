@@ -325,7 +325,10 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
 
 
 #=====pre-filter: frequency
-freq_filter_rt<-0.005
+data_bef_enc<-readRDS("./data/data_bef_enc.rda")
+feat_bef_enc<-readRDS("./data/feat_bef_enc.rda")
+  
+freq_filter_rt<-0.05
 data_bef_enc %<>% 
   dplyr::select(-CASE_CTRL) %>%
   semi_join(feat_bef_enc %>% filter(enc_wi >= round(freq_filter_rt*N)),

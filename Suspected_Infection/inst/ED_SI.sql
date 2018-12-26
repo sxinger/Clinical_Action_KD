@@ -30,6 +30,8 @@ select distinct
       ,c.start_dt culture_date
       ,am.start_dt antibio_date
       ,least(c.start_dt,am.start_dt) si_date
+      ,am.start_since_triage abx_since_triage
+      ,c.start_since_triage c_since_triage
       ,least(am.start_since_triage,c.start_since_triage) hr_since_triage
 from culture_unique c
 left join ED_Antibio am
@@ -50,6 +52,8 @@ select distinct
       ,c.start_dt culture_date
       ,am.start_dt antibio_date
       ,least(c.start_dt,am.start_dt) si_date
+      ,am.start_since_triage abx_since_triage
+      ,c.start_since_triage c_since_triage
       ,least(am.start_since_triage,c.start_since_triage) hr_since_triage
 from culture_unique c
 left join ED_Antibio am
@@ -76,6 +80,8 @@ select patient_num
       ,culture_date
       ,antibio_date
       ,si_date 
+      ,round(abx_since_triage,2) abx_since_triage
+      ,round(c_since_triage,2) c_since_triage
       ,round(hr_since_triage,2) si_since_triage
 from si_events
 where rn_enc = 1

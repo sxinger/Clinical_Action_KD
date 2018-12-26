@@ -13,7 +13,7 @@ require_libraries(c("Matrix",
 
 ##==============load data==============
 data_at_enc<-readRDS("./data/data_at_enc_discrt.rda")
-# data_bef_enc<-readRDS("./data/data_bef_enc.rda")
+data_bef_enc<-readRDS("./data/data_bef_enc.rda")
 rs_idx<-readRDS("./data/rand_idx.rda")
 
 
@@ -37,7 +37,12 @@ cd_out<-c("KUMC\\|VISITDETAIL\\|POS\\(O2\\)",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:2526",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:1601",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:16029",
-          "KUH\\|FLO_MEAS_ID\\+hash\\:301310")
+          "KUH\\|FLO_MEAS_ID\\+hash\\:301310",
+          "KUH\\|FLO_MEAS_ID\\:12880",
+          "KUH\\|COMPONENT_ID\\:7001",
+          "KUH\\|FLO_MEAS_ID\\+hash\\:1443",
+          "KUH\\|FLO_MEAS_ID\\:11429")
+
 data_at_enc %<>%
   filter(!grepl(paste0("(",paste(cd_out,collapse=")|("),")"),VARIABLE))
 
@@ -49,8 +54,13 @@ x_mt<-data_at_enc %>%
   arrange(desc(START_SINCE_TRIAGE)) %>%
   dplyr::slice(1:1) %>% ## latest values
   ungroup %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,TVAL_CHAR) %>%
+  bind_rows(data_bef_enc %>%
+              dplyr::filter(DAY_BEF_TRIAGE<=-31) %>%
+              dplyr::mutate(TVAL_CHAR=as.character(round(DAY_BEF_TRIAGE/365.25))) %>%
+              dplyr::mutate(VARIABLE=paste0(VARIABLE,"_",TVAL_CHAR,"yr"))) %>%
   unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
-  #then tranform
+  #then transform
   mutate(VARIABLE=case_when(grepl("(FLO_MEAS_ID\\+hash)|(FLO_MEAS_ID\\+LINE)+",VARIABLE) ~ paste0(VARIABLE,"_",TVAL_CHAR),
                             grepl("(VISITDETAIL\\|POS)+",VARIABLE) ~ paste0(VARIABLE,":",TVAL_CHAR),
                             grepl("num_",VARIABLE) ~ TVAL_CHAR,
@@ -61,7 +71,7 @@ x_mt<-data_at_enc %>%
                         val="NVAL_NUM",
                         binary=T)
 dim(x_mt)
-# [1] 498467   1584
+# [1] 498467   1986
 
 y_mt<-rs_idx %>% 
   semi_join(data_at_enc,by="ENCOUNTER_NUM") %>%

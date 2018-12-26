@@ -35,7 +35,7 @@ select 'SI_within_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
-where si_since_triage is not null and si_since_triage <= trans_since_triage
+where si_since_triage is not null and (si_since_triage <= trans_since_triage or trans_since_triage is null)
 union all
 select 'SI_after_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
@@ -68,5 +68,23 @@ select ('nonSI_transtion_from_ED_to_' || ServDep_name) CNT_TYPE,
 from SI_case_ctrl
 where si_since_triage is null and trans_since_triage is not null
 group by ServDep_name
+union all
+select 'nonSI_w_ABX_w_Culture' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is not null and c_since_triage is not null
+union all
+select 'nonSI_no_ABX_w_Culture' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is null and c_since_triage is not null
+union all
+select 'nonSI_no_Culture_no_ABX' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is null and abx_since_triage is null and c_since_triage is null
 
 
