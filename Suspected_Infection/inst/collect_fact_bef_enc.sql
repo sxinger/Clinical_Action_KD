@@ -20,11 +20,11 @@ select tr.patient_num
       ,obs.instance_num
       ,obs.modifier_cd
       ,obs.start_date start_dt
-      ,round(obs.start_date-tr.triage_start,3) day_bef_triage
+      ,round(obs.start_date-tr.triage_start) day_bef_triage
 from SI_case_ctrl tr
 join &&i2b2data.observation_fact@dblink obs
 on tr.patient_num = obs.patient_num
-where obs.start_date < tr.triage_start and
+where obs.encounter_num <> tr.encounter_num and
       (obs.concept_cd like 'CPT%' or
        obs.concept_cd like 'KUH|DX_ID%' or
        obs.concept_cd like 'ICD%' or
@@ -34,7 +34,7 @@ where obs.start_date < tr.triage_start and
         obs.modifier_cd in ('MedObs:Dispensed','MedObs:Historical','MedObs|MAR:Given',
                             'Surescripts:Amount','Surescripts:Days Supply','Surescripts|Status:Claim','Surescripts|Status:Fill'))) and
       obs.start_date >= Date &&start_date and
-      obs.start_date >= tr.triage_start - 365.25
+      obs.start_date >= tr.first_fact_dt - 365.25
 
 
 

@@ -10,13 +10,10 @@
 /*action: write
 /********************************************************************************/
 create table ED_betwn as
-select distinct patient_num
-               ,encounter_num
-               ,start_date
-               ,end_date
+select distinct 
+       patient_num
+      ,encounter_num
+      ,start_date
 from &&i2b2data.observation_fact@dblink
-where concept_cd in ('KUH|ED_EPISODE',
-                     'KUH|FLO_MEAS_ID+LINE:16045_1') and
+where concept_cd = 'KUH|FLO_MEAS_ID+LINE:16045_1' and
       start_date between Date &&start_date and Date &&end_date
-
-

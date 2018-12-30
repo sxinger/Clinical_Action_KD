@@ -24,7 +24,7 @@ cd_out<-c("KUMC\\|VISITDETAIL\\|POS\\(O2\\)",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:1447",
           "KUH\\|FLO_MEAS_ID\\:11427",
           "KUH\\|FLO_MEAS_ID\\:12265",
-          "KUH\\|FLO_MEAS_ID\\+LINE\\:9275",
+          "KUH\\|FLO_MEAS_ID\\+LINE\\:9275", #~BLOOD CULTURES DRAWN
           "KUH\\|FLO_MEAS_ID\\+LINE\\:8449",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:9045",
           "KUH\\|FLO_MEAS_ID\\+LINE\\:6936",

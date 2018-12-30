@@ -49,7 +49,7 @@ execute_single_sql(conn,
                    table_name=toupper(sql$tbl_out))
 
 #--batch execution
-# execute_batch_sql(conn,statements,verb,
+# execute_batch_sql(conn,statements,verb=T,
 #                   db_link=NULL,
 #                   i2b2_db_schema=config_file$i2b2_db_schema,
 #                   start_date=start_date,

@@ -9,7 +9,7 @@
 /********************************************************************************/
 create table SI_case_ctrl as
 with ctrl_tri as (
-select e.patient_num,e.encounter_num,e.triage_start,e.enc_end
+select e.patient_num,e.encounter_num,e.triage_start,e.first_fact_dt,e.enc_end
 from ED_eligb e
 where not exists (select 1 from ED_SI si where e.patient_num=si.patient_num and e.encounter_num=si.encounter_num)
 )
@@ -18,6 +18,7 @@ select tri.patient_num
       ,tri.encounter_num
       ,a.abx_name antibio_subtype
       ,tri.triage_start
+      ,tri.first_fact_dt
       ,round(c.start_since_triage,2) c_since_triage
       ,round(a.start_since_triage,2) abx_since_triage
       ,(tri.enc_end-tri.triage_start)*24 end_since_triage
@@ -33,6 +34,7 @@ select si.patient_num
       ,si.encounter_num
       ,si.antibio_subtype
       ,tri.triage_start
+      ,tri.first_fact_dt
       ,si.c_since_triage
       ,si.abx_since_triage
       ,si.si_since_triage
@@ -46,6 +48,7 @@ select ctrl.patient_num
       ,ctrl.encounter_num
       ,ctrl.antibio_subtype
       ,ctrl.triage_start
+      ,ctrl.first_fact_dt
       ,ctrl.c_since_triage
       ,ctrl.abx_since_triage
       ,null si_since_triage
@@ -57,18 +60,18 @@ where ctrl.rn = 1
    ,nonED_enc as (
 select patient_num
       ,encounter_num
-      ,ServDep_code
       ,ServDep_name
       ,IO_time
       ,hr_since_triage
-      ,row_number() over (partition by patient_num, encounter_num order by hr_since_triage) rn
+      ,row_number() over (partition by patient_num,encounter_num order by IO_time) rn
 from SI_ServDep
-where ServDep_code <> 'KUH|HOSP_ADT_CLASS:103' and hr_since_triage>=0
+where IO_time is not null
 )
 select cc.patient_num
       ,cc.encounter_num
       ,cc.antibio_subtype
       ,cc.triage_start
+      ,cc.first_fact_dt
       ,noned.ServDep_name
       ,noned.IO_time trans_time
       ,cc.c_since_triage
@@ -76,7 +79,7 @@ select cc.patient_num
       ,cc.si_since_triage
       ,noned.hr_since_triage trans_since_triage
       ,cc.end_since_triage
-      ,coalesce(cc.SI_since_triage,noned.hr_since_triage,cc.end_since_triage) pred_point
+      ,coalesce(cc.SI_since_triage,case when noned.hr_since_triage>0 then hr_since_triage else null end,cc.end_since_triage) pred_point
       ,cc.case_ctrl
 from case_ctrl cc
 left join nonED_enc noned
