@@ -24,7 +24,10 @@ start_date<-"2007-01-01"
 end_date<-"2018-12-31"
 within_d<-2
 
-##--extract SI cohort by executing the following sql snippets in order
+##------------ identify sepsis progress and treatment pathways by executing the following sql snippets in order --------------
+pressor_cd<-read.csv("./src/pressor_cd.csv",stringsAsFactors = F,na.strings = c(""," "))
+dbWriteTable(conn,"PRESSOR_CD",pressor_cd,temporary=T,overwrite=T)
+
 statements<-paste0(
   "./inst/",
   c("ED_SI_Temp",
@@ -51,21 +54,22 @@ statements<-paste0(
     "ED_SI_3HR_IV", 
     "ED_SI_6HR_screen",
     "ED_SI_6HR_PRESSOR", #need to access clarity for infusion rates
-    "ED_SI_6HR_RESUS"),
+    "ED_SI_6HR_CARDIAC"),
   ".sql"
 )
+
 #--excecute single snippet
-# sql<-parse_sql(statements[25],
-#                db_link=NULL,
-#                i2b2_db_schema=config_file$i2b2_db_schema,
-#                start_date=start_date,
-#                end_date=end_date,
-#                within_d=within_d)
-# 
-# execute_single_sql(conn,
-#                    statement=sql$statement,
-#                    write=(sql$action=="write"),
-#                    table_name=toupper(sql$tbl_out))
+sql<-parse_sql(statements[25],
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date,
+               within_d=within_d)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
 
 #--batch execution
 execute_batch_sql(conn,statements,verb=T,
@@ -75,41 +79,53 @@ execute_batch_sql(conn,statements,verb=T,
                   end_date=end_date,
                   within_d=within_d)
 
-##---get consort table
+##--------------- vasopressor details from clarity ---------------------------------------------------
+config_file_path<-"./config_nh.csv"
+config_file<-read.csv(config_file_path,stringsAsFactors = F)
+conn<-connect_to_db("Oracle","OCI",config_file)
+
+dbWriteTable(conn,"PRESSOR_CD",pressor_cd,temporary=T,overwrite=T)
+sql<-parse_sql("./inst/ED_SI_6HR_PRESSOR_NH.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date,
+               within_d=within_d)
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+config_file_path<-"./config.csv"
+config_file<-read.csv(config_file_path,stringsAsFactors = F)
+conn<-connect_to_db("Oracle","OCI",config_file)
+sql<-parse_sql("./inst/ED_SI_6HR_PRESSOR_BH.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema)
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+
+##----------------- Stage sepsis and extract the final --------------------
+sql<-parse_sql("./inst/ED_SI_SEPSIS_STAGE.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date,
+               within_d=within_d)
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+##----------------- get consort table ------------------------------
 sql<-parse_sql(paste0("./inst/consort_diagram.sql"))
 consort<-execute_single_sql(conn,
                             statement=sql$statement,
                             write=(sql$action=="write"),
                             table_name=toupper(sql$tbl_out))
 
-##---collect patient level info
-sql<-parse_sql(paste0("./inst/collect_pat_fact.sql"),
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema)
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
-
-##---collect clinical facts at encounter
-sql<-parse_sql(paste0("./inst/collect_fact_at_enc.sql"),
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema)
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
-
-##---collect clinical facts before encounter
-sql<-parse_sql(paste0("./inst/collect_fact_bef_enc.sql"),
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema,
-               start_date=start_date)
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
+write.csv(consort,file="./result/consort_diagram.csv",row.names = F)
 

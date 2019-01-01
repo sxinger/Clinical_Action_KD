@@ -1,15 +1,15 @@
 /*******************************************************************************/
-/*@file ED_SI_6HR_RESUS.sql
+/*@file ED_SI_6HR_CARDIAC.sql
 /*
 /*in: ED_SI_6HR_screen,observation_fact, concept_dimension 
 /*
 /*params: @dblink, &&i2b2
 /*       
-/*out: ED_SI_6HR_RESUS
+/*out: ED_SI_6HR_CARDIAC
 /*
 /*action: write
 /********************************************************************************/
-create table ED_SI_6HR_RESUS as
+create table ED_SI_6HR_CARDIAC as
 with order_cd as (
 select distinct concept_cd, regexp_substr(name_char,'[^#]+',1,2) name_char, 'CVP' label
 from &&i2b2data.concept_dimension@dblink
@@ -23,8 +23,8 @@ where regexp_like(name_char, '(( CVP )|(central venous pressure))+','i') and
 union all
 select distinct concept_cd, name_char, 'Echo' label
 from &&i2b2data.concept_dimension@dblink
-where regexp_like(name_char, '(echocardiogram)+','i') and
-      concept_cd like 'KUH|COMPONENT_ID%'
+where regexp_like(name_char, '(( Echo)|( ECG))+','i') and 
+      concept_cd like 'KUH|FLO_MEAS%'
 union all
 select distinct concept_cd, regexp_substr(name_char,'[^#]+',1,2) name_char, 'ScvO2' label
 from &&i2b2data.concept_dimension@dblink
@@ -57,14 +57,14 @@ select distinct
 from ED_SI_6HR_screen e 
 join &&i2b2data.observation_fact@dblink obs
 on e.patient_num = obs.patient_num and e.encounter_num = obs.encounter_num
-where (obs.concept_cd like 'KUH|FLO_MEAS%' or obs.concept_cd like 'KUH|PROC_ID%' or obs.concept_cd like 'KUH|COMPONENT_ID%') and
+where (obs.concept_cd like 'KUH|FLO_MEAS%' or obs.concept_cd like 'KUH|PROC_ID%') and
        obs.start_date > e.hypot2_dt and 
        to_char(obs.start_date,'HH24:MI:SS') <> '00:00:00'
 )
 select distinct
        cl.patient_num
       ,cl.encounter_num
-      ,'resuscitation' variable
+      ,'cardiac_monitor' variable
       ,cl.nval
       ,cl.units
       ,ht.label tval
@@ -75,6 +75,7 @@ select distinct
       ,cl.start_since_triage
       ,cl.end_dt
       ,cl.end_since_triage
+      ,row_number() over (partition by cl.patient_num, cl.encounter_num, ht.label order by cl.start_since_triage) rn_label
 from collect_resus cl
 join order_cd ht on ht.concept_cd = cl.code
 

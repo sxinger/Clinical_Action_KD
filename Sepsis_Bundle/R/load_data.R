@@ -1,7 +1,7 @@
 #### Determine censor points for controls ####
 ##========prepare
 rm(list=ls()); gc()
-setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
+setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle")
 
 source("./R/util.R")
 require_libraries(c( "dplyr"
@@ -15,10 +15,10 @@ config_file<-read.csv('./config.csv')
 conn<-connect_to_db("Oracle","OCI",config_file)
 
 ##=======load cohort=========
-enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL")
+enroll<-dbGetQuery(conn,"select * from ED_SI_SEPSIS_STAGE")
 N<-length(unique(enroll$ENCOUNTER_NUM))
-P<-sum(enroll$CASE_CTRL)
-# saveRDS(enroll,file="./data/SI_enroll.rda")
+P<-sum(enroll$SEPSIS_IND)
+saveRDS(enroll,file="./data/SI_enroll.rda")
 
 ##==============load patient-level data==================
 pat_at_enc<-dbGetQuery(conn,"select * from SI_PAT_AT_ENC")

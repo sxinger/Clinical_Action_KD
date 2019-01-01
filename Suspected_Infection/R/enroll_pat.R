@@ -93,3 +93,15 @@ execute_single_sql(conn,
                    write=(sql$action=="write"),
                    table_name=toupper(sql$tbl_out))
 
+##---collect historical diagnoses
+sql<-parse_sql("./inst/collect_hist_dx.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+

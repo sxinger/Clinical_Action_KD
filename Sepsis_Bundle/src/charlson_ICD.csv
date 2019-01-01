@@ -1,0 +1,535 @@
+DX_type,DX_code,DX,weight
+ICD9,410,Myocardial Infarction,1
+ICD9,412,Myocardial Infarction,1
+ICD10,I21,Myocardial Infarction,1
+ICD10,I22,Myocardial Infarction,1
+ICD10,I25.2,Myocardial Infarction,1
+ICD9,398.91,Congestive Heart Failure,1
+ICD9,402.01,Congestive Heart Failure,1
+ICD9,402.11,Congestive Heart Failure,1
+ICD9,402.91,Congestive Heart Failure,1
+ICD9,404.01,Congestive Heart Failure,1
+ICD9,404.03,Congestive Heart Failure,1
+ICD9,404.11,Congestive Heart Failure,1
+ICD9,404.13,Congestive Heart Failure,1
+ICD9,404.91,Congestive Heart Failure,1
+ICD9,404.93,Congestive Heart Failure,1
+ICD9,425.4,Congestive Heart Failure,1
+ICD9,425.5,Congestive Heart Failure,1
+ICD9,425.6,Congestive Heart Failure,1
+ICD9,425.7,Congestive Heart Failure,1
+ICD9,425.8,Congestive Heart Failure,1
+ICD9,425.9,Congestive Heart Failure,1
+ICD9,428,Congestive Heart Failure,1
+ICD9,398,Congestive Heart Failure,1
+ICD9,402,Congestive Heart Failure,1
+ICD9,425,Congestive Heart Failure,1
+ICD9,428,Congestive Heart Failure,1
+ICD10,I09.9,Congestive Heart Failure,1
+ICD10,I11.0,Congestive Heart Failure,1
+ICD10,I13.0,Congestive Heart Failure,1
+ICD10,I13.2,Congestive Heart Failure,1
+ICD10,I25.5,Congestive Heart Failure,1
+ICD10,I42.0,Congestive Heart Failure,1
+ICD10,I42.5,Congestive Heart Failure,1
+ICD10,I42.6,Congestive Heart Failure,1
+ICD10,I42.7,Congestive Heart Failure,1
+ICD10,I42.8,Congestive Heart Failure,1
+ICD10,I42.9,Congestive Heart Failure,1
+ICD10,I43,Congestive Heart Failure,1
+ICD10,I50,Congestive Heart Failure,1
+ICD10,P29.0,Congestive Heart Failure,1
+ICD9,93,Peripheral Vascular Disease,1
+ICD9,437.3,Peripheral Vascular Disease,1
+ICD9,440,Peripheral Vascular Disease,1
+ICD9,441,Peripheral Vascular Disease,1
+ICD9,443.1,Peripheral Vascular Disease,1
+ICD9,443.2,Peripheral Vascular Disease,1
+ICD9,443.3,Peripheral Vascular Disease,1
+ICD9,443.4,Peripheral Vascular Disease,1
+ICD9,443.5,Peripheral Vascular Disease,1
+ICD9,443.6,Peripheral Vascular Disease,1
+ICD9,443.7,Peripheral Vascular Disease,1
+ICD9,443.8,Peripheral Vascular Disease,1
+ICD9,443.9,Peripheral Vascular Disease,1
+ICD9,447.1,Peripheral Vascular Disease,1
+ICD9,557.1,Peripheral Vascular Disease,1
+ICD9,557.9,Peripheral Vascular Disease,1
+ICD9,V43.3,Peripheral Vascular Disease,1
+ICD9,440,Peripheral Vascular Disease,1
+ICD9,441,Peripheral Vascular Disease,1
+ICD9,443,Peripheral Vascular Disease,1
+ICD9,447,Peripheral Vascular Disease,1
+ICD9,557,Peripheral Vascular Disease,1
+ICD10,I70,Peripheral Vascular Disease,1
+ICD10,I71,Peripheral Vascular Disease,1
+ICD10,I73.1,Peripheral Vascular Disease,1
+ICD10,I73.8,Peripheral Vascular Disease,1
+ICD10,I73.9,Peripheral Vascular Disease,1
+ICD10,I77.1,Peripheral Vascular Disease,1
+ICD10,I79.0,Peripheral Vascular Disease,1
+ICD10,I79.2,Peripheral Vascular Disease,1
+ICD10,K55.1,Peripheral Vascular Disease,1
+ICD10,K55.8,Peripheral Vascular Disease,1
+ICD10,K55.9,Peripheral Vascular Disease,1
+ICD10,Z95.8,Peripheral Vascular Disease,1
+ICD10,Z95.9,Peripheral Vascular Disease,1
+ICD9,362.34,Cerebrovascular Disease ,1
+ICD9,430,Cerebrovascular Disease ,1
+ICD9,431,Cerebrovascular Disease ,1
+ICD9,432,Cerebrovascular Disease ,1
+ICD9,433,Cerebrovascular Disease ,1
+ICD9,434,Cerebrovascular Disease ,1
+ICD9,435,Cerebrovascular Disease ,1
+ICD9,436,Cerebrovascular Disease ,1
+ICD9,437,Cerebrovascular Disease ,1
+ICD9,438,Cerebrovascular Disease ,1
+ICD10,G45,Cerebrovascular Disease ,1
+ICD10,G46,Cerebrovascular Disease ,1
+ICD10,H34.0,Cerebrovascular Disease ,1
+ICD10,I60,Cerebrovascular Disease ,1
+ICD10,I61,Cerebrovascular Disease ,1
+ICD10,I62,Cerebrovascular Disease ,1
+ICD10,I63,Cerebrovascular Disease ,1
+ICD10,I64,Cerebrovascular Disease ,1
+ICD10,I65,Cerebrovascular Disease ,1
+ICD10,I66,Cerebrovascular Disease ,1
+ICD10,I67,Cerebrovascular Disease ,1
+ICD10,I68,Cerebrovascular Disease ,1
+ICD10,I69,Cerebrovascular Disease ,1
+ICD9,290,Dementia ,1
+ICD9,294.1,Dementia ,1
+ICD9,331.2,Dementia ,1
+ICD9,290,Dementia ,1
+ICD9,294,Dementia ,1
+ICD9,331,Dementia ,1
+ICD10,F00,Dementia ,1
+ICD10,F01,Dementia ,1
+ICD10,F02,Dementia ,1
+ICD10,F03,Dementia ,1
+ICD10,F05.1,Dementia ,1
+ICD10,G30,Dementia ,1
+ICD10,G31.1,Dementia ,1
+ICD9,416.8,Chronic Pulmonary Disease,1
+ICD9,416.9,Chronic Pulmonary Disease,1
+ICD9,490,Chronic Pulmonary Disease,1
+ICD9,491,Chronic Pulmonary Disease,1
+ICD9,492,Chronic Pulmonary Disease,1
+ICD9,493,Chronic Pulmonary Disease,1
+ICD9,494,Chronic Pulmonary Disease,1
+ICD9,495,Chronic Pulmonary Disease,1
+ICD9,496,Chronic Pulmonary Disease,1
+ICD9,497,Chronic Pulmonary Disease,1
+ICD9,498,Chronic Pulmonary Disease,1
+ICD9,499,Chronic Pulmonary Disease,1
+ICD9,500,Chronic Pulmonary Disease,1
+ICD9,501,Chronic Pulmonary Disease,1
+ICD9,502,Chronic Pulmonary Disease,1
+ICD9,503,Chronic Pulmonary Disease,1
+ICD9,504,Chronic Pulmonary Disease,1
+ICD9,505,Chronic Pulmonary Disease,1
+ICD9,506.4,Chronic Pulmonary Disease,1
+ICD9,508.1,Chronic Pulmonary Disease,1
+ICD9,508.8,Chronic Pulmonary Disease,1
+ICD9,416,Chronic Pulmonary Disease,1
+ICD9,446.5,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710.1,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710.2,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710.3,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710.4,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,714,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,714.1,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,714.2,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,714.8,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,725,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,446,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,710,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,714,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,725,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M05,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M06,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M31.5,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M32,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M33,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M34,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M35.1,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M35.3,Connective Tissue Disease/Rheumatic Disease,1
+ICD10,M36.0,Connective Tissue Disease/Rheumatic Disease,1
+ICD9,531,Peptic Ulcer Disease,1
+ICD9,532,Peptic Ulcer Disease,1
+ICD9,533,Peptic Ulcer Disease,1
+ICD9,534,Peptic Ulcer Disease,1
+ICD10,K25,Peptic Ulcer Disease,1
+ICD10,K26 ,Peptic Ulcer Disease,1
+ICD10,K27,Peptic Ulcer Disease,1
+ICD10,K28 ,Peptic Ulcer Disease,1
+ICD9,70.22,Mild Liver Disease,1
+ICD9,70.23,Mild Liver Disease,1
+ICD9,70.32,Mild Liver Disease,1
+ICD9,70.33,Mild Liver Disease,1
+ICD9,70.44,Mild Liver Disease,1
+ICD9,70.54,Mild Liver Disease,1
+ICD9,70.6,Mild Liver Disease,1
+ICD9,70.9,Mild Liver Disease,1
+ICD9,570,Mild Liver Disease,1
+ICD9,571,Mild Liver Disease,1
+ICD9,573.3,Mild Liver Disease,1
+ICD9,573.4,Mild Liver Disease,1
+ICD9,573.8,Mild Liver Disease,1
+ICD9,573.9,Mild Liver Disease,1
+ICD9,V42.7,Mild Liver Disease,1
+ICD9,70,Mild Liver Disease,1
+ICD9,570,Mild Liver Disease,1
+ICD9,571,Mild Liver Disease,1
+ICD9,573,Mild Liver Disease,1
+ICD10,B18,Mild Liver Disease,1
+ICD10,K70.0,Mild Liver Disease,1
+ICD10,K70.1,Mild Liver Disease,1
+ICD10,K70.2,Mild Liver Disease,1
+ICD10,K70.3,Mild Liver Disease,1
+ICD10,K70.9,Mild Liver Disease,1
+ICD10,K71.3,Mild Liver Disease,1
+ICD10,K71.4,Mild Liver Disease,1
+ICD10,K71.5,Mild Liver Disease,1
+ICD10,K71.7,Mild Liver Disease,1
+ICD10,K73,Mild Liver Disease,1
+ICD10,K74,Mild Liver Disease,1
+ICD10,K76.0,Mild Liver Disease,1
+ICD10,K76.2,Mild Liver Disease,1
+ICD10,K76.3,Mild Liver Disease,1
+ICD10,K76.4,Mild Liver Disease,1
+ICD10,K76.8,Mild Liver Disease,1
+ICD10,K76.9,Mild Liver Disease,1
+ICD10,Z94.4,Mild Liver Disease,1
+ICD9,250,Diabetes without Chronic Complications,1
+ICD9,250.1,Diabetes without Chronic Complications,1
+ICD9,250.2,Diabetes without Chronic Complications,1
+ICD9,250.3,Diabetes without Chronic Complications,1
+ICD9,250.8,Diabetes without Chronic Complications,1
+ICD9,250.9,Diabetes without Chronic Complications,1
+ICD9,250,Diabetes without Chronic Complications,1
+ICD10,E10.0,Diabetes without Chronic Complications,1
+ICD10,E10.1,Diabetes without Chronic Complications,1
+ICD10,E10.6,Diabetes without Chronic Complications,1
+ICD10,E10.8,Diabetes without Chronic Complications,1
+ICD10,E10.9,Diabetes without Chronic Complications,1
+ICD10,E11.0,Diabetes without Chronic Complications,1
+ICD10,E11.1,Diabetes without Chronic Complications,1
+ICD10,E11.6,Diabetes without Chronic Complications,1
+ICD10,E11.8,Diabetes without Chronic Complications,1
+ICD10,E11.9,Diabetes without Chronic Complications,1
+ICD10,E12.0,Diabetes without Chronic Complications,1
+ICD10,E12.1,Diabetes without Chronic Complications,1
+ICD10,E12.6,Diabetes without Chronic Complications,1
+ICD10,E12.8,Diabetes without Chronic Complications,1
+ICD10,E12.9,Diabetes without Chronic Complications,1
+ICD10,E13.0,Diabetes without Chronic Complications,1
+ICD10,E13.1,Diabetes without Chronic Complications,1
+ICD10,E13.6,Diabetes without Chronic Complications,1
+ICD10,E13.8,Diabetes without Chronic Complications,1
+ICD10,E13.9,Diabetes without Chronic Complications,1
+ICD10,E14.0,Diabetes without Chronic Complications,1
+ICD10,E14.1,Diabetes without Chronic Complications,1
+ICD10,E14.6,Diabetes without Chronic Complications,1
+ICD10,E14.8,Diabetes without Chronic Complications,1
+ICD10,E14.9,Diabetes without Chronic Complications,1
+ICD9,250.4,Diabetes with Chronic Complications,2
+ICD9,250.5,Diabetes with Chronic Complications,2
+ICD9,250.6,Diabetes with Chronic Complications,2
+ICD9,250.7,Diabetes with Chronic Complications,2
+ICD10,E10.2,Diabetes with Chronic Complications,2
+ICD10,E10.3,Diabetes with Chronic Complications,2
+ICD10,E10.4,Diabetes with Chronic Complications,2
+ICD10,E10.5,Diabetes with Chronic Complications,2
+ICD10,E10.7,Diabetes with Chronic Complications,2
+ICD10,E11.2,Diabetes with Chronic Complications,2
+ICD10,E11.3,Diabetes with Chronic Complications,2
+ICD10,E11.4,Diabetes with Chronic Complications,2
+ICD10,E11.5,Diabetes with Chronic Complications,2
+ICD10,E11.7,Diabetes with Chronic Complications,2
+ICD10,E12.2,Diabetes with Chronic Complications,2
+ICD10,E12.3,Diabetes with Chronic Complications,2
+ICD10,E12.4,Diabetes with Chronic Complications,2
+ICD10,E12.5,Diabetes with Chronic Complications,2
+ICD10,E12.7,Diabetes with Chronic Complications,2
+ICD10,E13.2,Diabetes with Chronic Complications,2
+ICD10,E13.3,Diabetes with Chronic Complications,2
+ICD10,E13.4,Diabetes with Chronic Complications,2
+ICD10,E13.5,Diabetes with Chronic Complications,2
+ICD10,E13.7,Diabetes with Chronic Complications,2
+ICD10,E14.2,Diabetes with Chronic Complications,2
+ICD10,E14.3,Diabetes with Chronic Complications,2
+ICD10,E14.4,Diabetes with Chronic Complications,2
+ICD10,E14.5,Diabetes with Chronic Complications,2
+ICD10,E14.7,Diabetes with Chronic Complications,2
+ICD9,334.1,Paraplegia and Hemiplegia,2
+ICD9,342,Paraplegia and Hemiplegia,2
+ICD9,343,Paraplegia and Hemiplegia,2
+ICD9,344,Paraplegia and Hemiplegia,2
+ICD9,344.1,Paraplegia and Hemiplegia,2
+ICD9,344.2,Paraplegia and Hemiplegia,2
+ICD9,344.3,Paraplegia and Hemiplegia,2
+ICD9,344.4,Paraplegia and Hemiplegia,2
+ICD9,344.5,Paraplegia and Hemiplegia,2
+ICD9,344.6,Paraplegia and Hemiplegia,2
+ICD9,344.9,Paraplegia and Hemiplegia,2
+ICD9,334,Paraplegia and Hemiplegia,2
+ICD9,342,Paraplegia and Hemiplegia,2
+ICD9,343,Paraplegia and Hemiplegia,2
+ICD9,344,Paraplegia and Hemiplegia,2
+ICD10,G04.1,Paraplegia and Hemiplegia,2
+ICD10,G11.4,Paraplegia and Hemiplegia,2
+ICD10,G80.1,Paraplegia and Hemiplegia,2
+ICD10,G80.2,Paraplegia and Hemiplegia,2
+ICD10,G81,Paraplegia and Hemiplegia,2
+ICD10,G82,Paraplegia and Hemiplegia,2
+ICD10,G83.0,Paraplegia and Hemiplegia,2
+ICD10,G83.1,Paraplegia and Hemiplegia,2
+ICD10,G83.2,Paraplegia and Hemiplegia,2
+ICD10,G83.3,Paraplegia and Hemiplegia,2
+ICD10,G83.4,Paraplegia and Hemiplegia,2
+ICD10,G83.9,Paraplegia and Hemiplegia,2
+ICD9,403.01,Renal Disease,2
+ICD9,403.11,Renal Disease,2
+ICD9,403.91,Renal Disease,2
+ICD9,404.02,Renal Disease,2
+ICD9,404.03,Renal Disease,2
+ICD9,404.12,Renal Disease,2
+ICD9,404.13,Renal Disease,2
+ICD9,404.92,Renal Disease,2
+ICD9,404.93,Renal Disease,2
+ICD9,582,Renal Disease,2
+ICD9,583,Renal Disease,2
+ICD9,583.1,Renal Disease,2
+ICD9,583.2,Renal Disease,2
+ICD9,583.3,Renal Disease,2
+ICD9,583.4,Renal Disease,2
+ICD9,583.5,Renal Disease,2
+ICD9,583.6,Renal Disease,2
+ICD9,583.7,Renal Disease,2
+ICD9,585,Renal Disease,2
+ICD9,586,Renal Disease,2
+ICD9,588,Renal Disease,2
+ICD9,V42.0,Renal Disease,2
+ICD9,V45.1,Renal Disease,2
+ICD9,V56,Renal Disease,2
+ICD9,403,Renal Disease,2
+ICD9,582,Renal Disease,2
+ICD9,583,Renal Disease,2
+ICD9,585,Renal Disease,2
+ICD9,586,Renal Disease,2
+ICD9,588,Renal Disease,2
+ICD9,V56,Renal Disease,2
+ICD10,I12.0,Renal Disease,2
+ICD10,I13.1,Renal Disease,2
+ICD10,N03.2,Renal Disease,2
+ICD10,N03.3,Renal Disease,2
+ICD10,N03.4,Renal Disease,2
+ICD10,N03.5,Renal Disease,2
+ICD10,N03.6,Renal Disease,2
+ICD10,N03.7,Renal Disease,2
+ICD10,N05.2,Renal Disease,2
+ICD10,N05.3,Renal Disease,2
+ICD10,N05.4,Renal Disease,2
+ICD10,N05.5,Renal Disease,2
+ICD10,N05.6,Renal Disease,2
+ICD10,N05.7,Renal Disease,2
+ICD10,N18,Renal Disease,2
+ICD10,N19,Renal Disease,2
+ICD10,N25.0,Renal Disease,2
+ICD10,Z49.0,Renal Disease,2
+ICD10,Z49.1,Renal Disease,2
+ICD10,Z49.2,Renal Disease,2
+ICD10,Z94.0,Renal Disease,2
+ICD10,Z99.2,Renal Disease,2
+ICD9,140,Cancer,2
+ICD9,141,Cancer,2
+ICD9,142,Cancer,2
+ICD9,143,Cancer,2
+ICD9,144,Cancer,2
+ICD9,145,Cancer,2
+ICD9,146,Cancer,2
+ICD9,147,Cancer,2
+ICD9,148,Cancer,2
+ICD9,149,Cancer,2
+ICD9,150,Cancer,2
+ICD9,151,Cancer,2
+ICD9,152,Cancer,2
+ICD9,153,Cancer,2
+ICD9,154,Cancer,2
+ICD9,155,Cancer,2
+ICD9,156,Cancer,2
+ICD9,157,Cancer,2
+ICD9,158,Cancer,2
+ICD9,159,Cancer,2
+ICD9,160,Cancer,2
+ICD9,161,Cancer,2
+ICD9,162,Cancer,2
+ICD9,163,Cancer,2
+ICD9,164,Cancer,2
+ICD9,165,Cancer,2
+ICD9,166,Cancer,2
+ICD9,167,Cancer,2
+ICD9,168,Cancer,2
+ICD9,169,Cancer,2
+ICD9,170,Cancer,2
+ICD9,171,Cancer,2
+ICD9,172,Cancer,2
+ICD9,174,Cancer,2
+ICD9,175,Cancer,2
+ICD9,176,Cancer,2
+ICD9,177,Cancer,2
+ICD9,178,Cancer,2
+ICD9,179,Cancer,2
+ICD9,180,Cancer,2
+ICD9,181,Cancer,2
+ICD9,182,Cancer,2
+ICD9,183,Cancer,2
+ICD9,184,Cancer,2
+ICD9,185,Cancer,2
+ICD9,186,Cancer,2
+ICD9,187,Cancer,2
+ICD9,188,Cancer,2
+ICD9,189,Cancer,2
+ICD9,190,Cancer,2
+ICD9,191,Cancer,2
+ICD9,192,Cancer,2
+ICD9,193,Cancer,2
+ICD9,194,Cancer,2
+ICD9,195,Cancer,2
+ICD9,195,Cancer,2
+ICD9,195.1,Cancer,2
+ICD9,195.2,Cancer,2
+ICD9,195.3,Cancer,2
+ICD9,195.4,Cancer,2
+ICD9,195.5,Cancer,2
+ICD9,195.6,Cancer,2
+ICD9,195.7,Cancer,2
+ICD9,195.8,Cancer,2
+ICD9,200,Cancer,2
+ICD9,201,Cancer,2
+ICD9,202,Cancer,2
+ICD9,203,Cancer,2
+ICD9,204,Cancer,2
+ICD9,205,Cancer,2
+ICD9,206,Cancer,2
+ICD9,207,Cancer,2
+ICD9,208,Cancer,2
+ICD9,238,Cancer,2
+ICD9,238.6,Cancer,2
+ICD10,C00,Cancer,2
+ICD10,C01,Cancer,2
+ICD10,C02,Cancer,2
+ICD10,C03,Cancer,2
+ICD10,C04,Cancer,2
+ICD10,C05,Cancer,2
+ICD10,C06,Cancer,2
+ICD10,C07,Cancer,2
+ICD10,C08,Cancer,2
+ICD10,C09,Cancer,2
+ICD10,C10,Cancer,2
+ICD10,C11,Cancer,2
+ICD10,C12,Cancer,2
+ICD10,C13,Cancer,2
+ICD10,C14,Cancer,2
+ICD10,C15,Cancer,2
+ICD10,C16,Cancer,2
+ICD10,C17,Cancer,2
+ICD10,C18,Cancer,2
+ICD10,C19,Cancer,2
+ICD10,C20,Cancer,2
+ICD10,C21,Cancer,2
+ICD10,C22,Cancer,2
+ICD10,C23,Cancer,2
+ICD10,C24,Cancer,2
+ICD10,C25,Cancer,2
+ICD10,C26,Cancer,2
+ICD10,C30,Cancer,2
+ICD10,C31,Cancer,2
+ICD10,C32,Cancer,2
+ICD10,C33,Cancer,2
+ICD10,C34,Cancer,2
+ICD10,C37,Cancer,2
+ICD10,C38,Cancer,2
+ICD10,C39,Cancer,2
+ICD10,C40,Cancer,2
+ICD10,C41,Cancer,2
+ICD10,C43,Cancer,2
+ICD10,C45,Cancer,2
+ICD10,C46,Cancer,2
+ICD10,C47,Cancer,2
+ICD10,C48,Cancer,2
+ICD10,C49,Cancer,2
+ICD10,C50,Cancer,2
+ICD10,C51,Cancer,2
+ICD10,C52,Cancer,2
+ICD10,C53,Cancer,2
+ICD10,C54,Cancer,2
+ICD10,C55,Cancer,2
+ICD10,C56,Cancer,2
+ICD10,C57,Cancer,2
+ICD10,C58,Cancer,2
+ICD10,C60,Cancer,2
+ICD10,C61,Cancer,2
+ICD10,C62,Cancer,2
+ICD10,C63,Cancer,2
+ICD10,C64,Cancer,2
+ICD10,C65,Cancer,2
+ICD10,C66,Cancer,2
+ICD10,C67,Cancer,2
+ICD10,C68,Cancer,2
+ICD10,C69,Cancer,2
+ICD10,C70,Cancer,2
+ICD10,C71,Cancer,2
+ICD10,C72,Cancer,2
+ICD10,C73,Cancer,2
+ICD10,C74,Cancer,2
+ICD10,C75,Cancer,2
+ICD10,C76,Cancer,2
+ICD10,C81,Cancer,2
+ICD10,C82,Cancer,2
+ICD10,C83,Cancer,2
+ICD10,C84,Cancer,2
+ICD10,C85,Cancer,2
+ICD10,C88,Cancer,2
+ICD10,C90,Cancer,2
+ICD10,C91,Cancer,2
+ICD10,C92,Cancer,2
+ICD10,C93,Cancer,2
+ICD10,C94,Cancer,2
+ICD10,C95,Cancer,2
+ICD10,C96,Cancer,2
+ICD10,C97,Cancer,2
+ICD9,456,Moderate or Severe Liver Disease,3
+ICD9,456.1,Moderate or Severe Liver Disease,3
+ICD9,456.2,Moderate or Severe Liver Disease,3
+ICD9,572.2,Moderate or Severe Liver Disease,3
+ICD9,572.3,Moderate or Severe Liver Disease,3
+ICD9,572.4,Moderate or Severe Liver Disease,3
+ICD9,572.8,Moderate or Severe Liver Disease,3
+ICD9,456,Moderate or Severe Liver Disease,3
+ICD9,572,Moderate or Severe Liver Disease,3
+ICD10,I85.0,Moderate or Severe Liver Disease,3
+ICD10,I85.9,Moderate or Severe Liver Disease,3
+ICD10,I86.4,Moderate or Severe Liver Disease,3
+ICD10,I98.2,Moderate or Severe Liver Disease,3
+ICD10,K70.4,Moderate or Severe Liver Disease,3
+ICD10,K71.1,Moderate or Severe Liver Disease,3
+ICD10,K72.1,Moderate or Severe Liver Disease,3
+ICD10,K72.9,Moderate or Severe Liver Disease,3
+ICD10,K76.5,Moderate or Severe Liver Disease,3
+ICD10,K76.6,Moderate or Severe Liver Disease,3
+ICD10,K76.7,Moderate or Severe Liver Disease,3
+ICD9,196–199 ,Metastatic Carcinoma ,6
+ICD10,C77,Metastatic Carcinoma ,6
+ICD10,C78,Metastatic Carcinoma ,6
+ICD10,C79,Metastatic Carcinoma ,6
+ICD10,C80,Metastatic Carcinoma ,6
+ICD9,42,HIV/AIDS,6
+ICD9,43,HIV/AIDS,6
+ICD9,44,HIV/AIDS,6
+ICD10,B20,HIV/AIDS,6
+ICD10,B21,HIV/AIDS,6
+ICD10,B22,HIV/AIDS,6
+ICD10,B24 ,HIV/AIDS,6

@@ -1,7 +1,7 @@
 /*******************************************************************************/
 /*@file SI_pat_at_enc.sql
 /*
-/*in: SI_case_ctrl, blueherondata.patient_dimension
+/*in: SI_case_ctrl, patient_dimension
 /*
 /*params: @dblink, &&i2b2
 /*

@@ -1,7 +1,7 @@
 /*******************************************************************************/
 /*@file SI_obs_bef_enc.sql
 /*
-/*in: ED_18up, ED_Culture, ED_Antibio, ED_SI, SI_case_ctrl
+/*in: SI_case_ctrl, observation_fact
 /*
 /*params: @dblink, &&i2b2, &&start_date
 /*

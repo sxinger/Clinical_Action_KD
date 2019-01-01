@@ -74,6 +74,7 @@ select patient_num
       ,dense_rank() over (partition by patient_num, encounter_num, modifier order by start_dt asc) rn
 from collect_iv
 )
+   ,iv_stg as(
 select distinct
        iv.patient_num
       ,iv.encounter_num
@@ -91,6 +92,22 @@ from iv_clean iv
 left join ED_SI_3HR_screen bd
 on iv.patient_num = bd.patient_num and iv.encounter_num = bd.encounter_num and
    iv.cum_nval > 0
+)
+select patient_num
+      ,encounter_num
+      ,variable
+      ,tval
+      ,modifier
+      ,flag
+      ,start_dt
+      ,start_since_trigger
+      ,start_since_triage
+      ,iv_duration
+      ,iv_order
+      ,row_number() over (partition by patient_num, encounter_num, tval order by start_since_triage) rn_liter
+      ,row_number() over (partition by patient_num, encounter_num, flag order by start_since_triage) rn_flag
+from iv_stg
+
 
 
 
