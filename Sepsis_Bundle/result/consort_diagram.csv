@@ -1,76 +1,89 @@
-"CNT_TYPE","PAT_CNT","ENC_CNT"
-"Initial",180845,463267
-"Suspected Infection",33724,56870
-"Alert-2 SIRS",16942,24216
-"Alert-2 SIRS, No Organ Dysfunction",3794,4221
-"Alert-1st Organ Dysfunction",25312,41881
-"Alert-1st Organ Dysfunction, No SIRS",7047,8929
-"Alert-1st Organ Dysfunction, No 2 SIRS",15130,21886
-"Alert-1st Organ Dysfunction, 2 SIRS - Sepsis",14252,19995
-"OD:AC",2478,2852
-"OD:AC+OD:AMS",19,19
-"OD:AC+OD:AMS+OD:Hypotension+OD:IL+OD:KF",1,1
-"OD:AC+OD:AMS+OD:Hypotension+OD:LF",1,1
-"OD:AC+OD:AMS+OD:Hypoxemia",2,2
-"OD:AC+OD:AMS+OD:IL",1,1
-"OD:AC+OD:AMS+OD:IL+OD:LF",1,1
-"OD:AC+OD:AMS+OD:KF",2,2
-"OD:AC+OD:Hypotension",19,19
-"OD:AC+OD:Hypotension+OD:Hypoxemia",1,1
-"OD:AC+OD:Hypotension+OD:IL",4,4
-"OD:AC+OD:Hypotension+OD:IL+OD:KF",2,2
-"OD:AC+OD:Hypotension+OD:IL+OD:LF",1,1
-"OD:AC+OD:Hypotension+OD:KF",1,1
-"OD:AC+OD:Hypotension+OD:LF",1,1
-"OD:AC+OD:Hypoxemia",4,4
-"OD:AC+OD:Hypoxemia+OD:IL",3,3
-"OD:AC+OD:Hypoxemia+OD:KF",1,1
-"OD:AC+OD:IL",306,317
-"OD:AC+OD:IL+OD:KF",17,18
-"OD:AC+OD:IL+OD:KF+OD:LF",5,5
-"OD:AC+OD:IL+OD:LF",60,62
-"OD:AC+OD:KF",100,108
-"OD:AC+OD:KF+OD:LF",10,10
-"OD:AC+OD:LF",190,205
-"OD:AMS",2450,2731
-"OD:AMS+OD:Hypotension",53,54
-"OD:AMS+OD:Hypotension+OD:Hypoxemia",1,1
-"OD:AMS+OD:Hypoxemia",21,21
-"OD:AMS+OD:IL",10,10
-"OD:AMS+OD:IL+OD:KF",1,1
-"OD:AMS+OD:KF",2,2
-"OD:AMS+OD:LF",1,1
-"OD:Hypotension",5859,6911
-"OD:Hypotension+OD:Hypoxemia",262,266
-"OD:Hypotension+OD:Hypoxemia+OD:IL",1,1
-"OD:Hypotension+OD:IL",16,16
-"OD:Hypotension+OD:KF",4,4
-"OD:Hypoxemia",2531,3004
-"OD:Hypoxemia+OD:IL",41,41
-"OD:Hypoxemia+OD:KF",3,3
-"OD:IL",2210,2439
-"OD:IL+OD:KF",51,51
-"OD:IL+OD:KF+OD:LF",3,3
-"OD:IL+OD:LF",24,24
-"OD:KF",409,532
-"OD:KF+OD:LF",11,11
-"OD:LF",201,227
-"Sepsis",14252,19995
-"Initial Lactate - Non-Sepsis",10880,14189
-"Initial Lactate - Sepsis",10549,14051
-"Sepsis before Culture",2499,2665
-"Sepsis before Lactate",3736,4234
-"Sepsis before Diagnostic Component",1298,1347
-"IV triggered - Non-Sepsis",10806,14671
-"IV completed - Non-Sepsis",7533,9402
-"IV triggered - Sepsis",10770,14263
-"IV initiated - Sepsis",8294,10572
-"Sepsis before IV triggered",3440,3961
-"Sepsis before IV initiated",6489,8037
-"Sepsis before IV completed",6961,8552
-"Sepsis before Antibiotics",10145,13390
-"Sepsis before Therapautic Component",9200,11952
-"Repeat Lactate",5148,5939
-"Remain Hypotensive",7293,9111
-"Vasopressor initiated",3047,3381
-"Cardiac events",652,676
+"IDX","CNT_TYPE","PAT_CNT","ENC_CNT"
+1,"Initial",180845,463267
+2,"Suspected Infection",33724,56870
+3,"Alert-2 SIRS",16942,24216
+4,"Alert-2 SIRS, No Organ Dysfunction",3794,4221
+5,"Alert-1st Organ Dysfunction",25312,41881
+6,"Alert-1st Organ Dysfunction, No SIRS",7047,8929
+7,"Alert-1st Organ Dysfunction, No 2 SIRS",15130,21886
+8,"Alert-1st Organ Dysfunction, 2 SIRS - Sepsis",14252,19995
+9,"OD:AC",2478,2852
+9,"OD:AC+OD:AMS",19,19
+9,"OD:AC+OD:AMS+OD:Hypotension+OD:IL+OD:KF",1,1
+9,"OD:AC+OD:AMS+OD:Hypotension+OD:LF",1,1
+9,"OD:AC+OD:AMS+OD:Hypoxemia",2,2
+9,"OD:AC+OD:AMS+OD:IL",1,1
+9,"OD:AC+OD:AMS+OD:IL+OD:LF",1,1
+9,"OD:AC+OD:AMS+OD:KF",2,2
+9,"OD:AC+OD:Hypotension",19,19
+9,"OD:AC+OD:Hypotension+OD:Hypoxemia",1,1
+9,"OD:AC+OD:Hypotension+OD:IL",4,4
+9,"OD:AC+OD:Hypotension+OD:IL+OD:KF",2,2
+9,"OD:AC+OD:Hypotension+OD:IL+OD:LF",1,1
+9,"OD:AC+OD:Hypotension+OD:KF",1,1
+9,"OD:AC+OD:Hypotension+OD:LF",1,1
+9,"OD:AC+OD:Hypoxemia",4,4
+9,"OD:AC+OD:Hypoxemia+OD:IL",3,3
+9,"OD:AC+OD:Hypoxemia+OD:KF",1,1
+9,"OD:AC+OD:IL",306,317
+9,"OD:AC+OD:IL+OD:KF",17,18
+9,"OD:AC+OD:IL+OD:KF+OD:LF",5,5
+9,"OD:AC+OD:IL+OD:LF",60,62
+9,"OD:AC+OD:KF",100,108
+9,"OD:AC+OD:KF+OD:LF",10,10
+9,"OD:AC+OD:LF",190,205
+9,"OD:AMS",2450,2731
+9,"OD:AMS+OD:Hypotension",53,54
+9,"OD:AMS+OD:Hypotension+OD:Hypoxemia",1,1
+9,"OD:AMS+OD:Hypoxemia",21,21
+9,"OD:AMS+OD:IL",10,10
+9,"OD:AMS+OD:IL+OD:KF",1,1
+9,"OD:AMS+OD:KF",2,2
+9,"OD:AMS+OD:LF",1,1
+9,"OD:Hypotension",5859,6911
+9,"OD:Hypotension+OD:Hypoxemia",262,266
+9,"OD:Hypotension+OD:Hypoxemia+OD:IL",1,1
+9,"OD:Hypotension+OD:IL",16,16
+9,"OD:Hypotension+OD:KF",4,4
+9,"OD:Hypoxemia",2531,3004
+9,"OD:Hypoxemia+OD:IL",41,41
+9,"OD:Hypoxemia+OD:KF",3,3
+9,"OD:IL",2210,2439
+9,"OD:IL+OD:KF",51,51
+9,"OD:IL+OD:KF+OD:LF",3,3
+9,"OD:IL+OD:LF",24,24
+9,"OD:KF",409,532
+9,"OD:KF+OD:LF",11,11
+9,"OD:LF",201,227
+10,"Sepsis",14252,19995
+11,"Sepsis - Hypotensive",10770,14263
+12,"Sepsis - Non-Hypotensive",4843,5732
+13,"Initial Lactate - Non-Sepsis",10880,14189
+14,"Initial Lactate - Sepsis",10549,14051
+15,"Initial Lactate - Hypotensive-Sepsis",8146,10354
+16,"Initial Lactate - NonHypotensive-Sepsis",3222,3697
+17,"Sepsis before Culture",2499,2665
+18,"Hypotensive-Sepsis before Culture",1821,1915
+19,"NonHypotensive-Sepsis before Culture",730,750
+20,"Sepsis before Lactate",3736,4234
+21,"Hypotensive-Sepsis before Lactate",2994,3332
+22,"NonHypotensive-Sepsis before Lactate",858,902
+23,"Sepsis before Diagnostic Component",1298,1347
+24,"Hypotensive-Sepsis before Diagnostic Components",916,943
+25,"NonHypotensive-Sepsis before Diagnostic Components",396,404
+26,"IV triggered - Non-Sepsis",10806,14671
+27,"IV completed - Non-Sepsis",7533,9402
+28,"IV triggered - Sepsis",10770,14263
+29,"IV initiated - Sepsis",8294,10572
+30,"Sepsis before IV triggered",3440,3961
+31,"Sepsis before IV initiated",6489,8037
+32,"Sepsis before IV completed",6961,8552
+33,"Sepsis before Antibiotics",10145,13390
+34,"Hypotensive-Sepsis before Antibiotics",7728,9724
+35,"Sepsis before Therapautic Components",9200,11952
+36,"Hypotensive-Sepsis before Therapautic Components",6716,8286
+37,"NonHypotensive-Sepsis before Therapautic Components",3200,3666
+38,"Repeat Lactate",5148,5939
+39,"Remain Hypotensive",7293,9111
+40,"Vasopressor initiated",3047,3381
+41,"Cardiac events",652,676
