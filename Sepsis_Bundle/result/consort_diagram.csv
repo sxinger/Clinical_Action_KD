@@ -72,18 +72,21 @@
 24,"Hypotensive-Sepsis before Diagnostic Components",916,943
 25,"NonHypotensive-Sepsis before Diagnostic Components",396,404
 26,"IV triggered - Non-Sepsis",10806,14671
-27,"IV completed - Non-Sepsis",7533,9402
-28,"IV triggered - Sepsis",10770,14263
-29,"IV initiated - Sepsis",8294,10572
-30,"Sepsis before IV triggered",3440,3961
-31,"Sepsis before IV initiated",6489,8037
-32,"Sepsis before IV completed",6961,8552
-33,"Sepsis before Antibiotics",10145,13390
-34,"Hypotensive-Sepsis before Antibiotics",7728,9724
-35,"Sepsis before Therapautic Components",9200,11952
-36,"Hypotensive-Sepsis before Therapautic Components",6716,8286
-37,"NonHypotensive-Sepsis before Therapautic Components",3200,3666
-38,"Repeat Lactate",5148,5939
-39,"Remain Hypotensive",7293,9111
-40,"Vasopressor initiated",3047,3381
-41,"Cardiac events",652,676
+27,"IV initiated - Non-Sepsis",9636,12787
+28,"IV completed - Non-Sepsis",7533,9402
+29,"IV triggered - Sepsis",10770,14263
+30,"IV initiated - Sepsis",10284,13472
+31,"IV completed - Sepsis",8867,11195
+32,"Sepsis before IV triggered",3440,3961
+33,"Sepsis before IV initiated",6489,8037
+34,"Sepsis before IV completed",6961,8552
+35,"Sepsis before Antibiotics",10145,13390
+36,"Hypotensive-Sepsis before Antibiotics",7728,9724
+37,"NonHypotensive-Sepsis before Antibiotics",3200,3666
+38,"Sepsis before Therapautic Components",9200,11952
+39,"Hypotensive-Sepsis before Therapautic Components",6716,8286
+40,"NonHypotensive-Sepsis before Therapautic Components",3200,3666
+41,"Repeat Lactate",5148,5939
+42,"Remain Hypotensive",7293,9111
+43,"Vasopressor initiated",3047,3381
+44,"Cardiac events",652,676
