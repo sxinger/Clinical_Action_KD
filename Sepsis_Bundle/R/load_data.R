@@ -21,23 +21,22 @@ P<-sum(enroll$SEPSIS_IND)
 saveRDS(enroll,file="./data/SI_enroll.rda")
 
 ##==============load patient-level data==================
-readRDS("../Suspected_Infection/data/pat_at_enc.rda")
+pat_at_enc<-readRDS("../Suspected_Infection/data/pat_at_enc.rda") %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM"))
+
+
 
 ##=============load data at encounter===================
-saveRDS(data_at_enc,file="./data/data_at_enc.rda")
-saveRDS(feat_at_enc2,file="./data/feat_at_enc.rda")
+data_at_enc<-readRDS("../Suspected_Infection/data/data_at_enc.rda") %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM"))
+
 
 
 ##=============load data before encounter===================
-saveRDS(data_bef_enc,file="./data/data_bef_enc.rda")
-saveRDS(feat_bef_enc,file="./data/feat_bef_enc.rda")
+data_bef_enc<-readRDS("..Suspected_Infection/data/data_bef_enc.rda") %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM"))
 
 
-##==============load all historical dx=====================
-historical_dx<-dbGetQuery(conn,"select * from SI_HIST_DX")
-
-#========save data
-saveRDS(hist_dx,file="./data/hist_dx.rda")
 
 
 

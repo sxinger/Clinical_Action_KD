@@ -93,12 +93,31 @@ execute_single_sql(conn,
                    write=(sql$action=="write"),
                    table_name=toupper(sql$tbl_out))
 
-##---collect historical diagnoses
-sql<-parse_sql("./inst/collect_hist_dx.sql",
+##---collect historical comorbidity info
+comorb_icd<-read.csv("../Sepsis_Bundle/src/charlson_ICD.csv",
+                     stringsAsFactors = F,na.strings=c(""," "))
+dbWriteTable(conn,"COMORB_DX_CD",comorb_icd,temporary=T,overwrite=T)
+
+sql<-parse_sql("./inst/collect_comorb_dx.sql",
                db_link=NULL,
                i2b2_db_schema=config_file$i2b2_db_schema,
-               start_date=start_date,
-               end_date=end_date)
+               start_date=start_date)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+
+##---collect other chronic conditions of interest
+chronic_icd<-read.csv("../Sepsis_Bundle/src/chronic_ICD.csv",
+                     stringsAsFactors = F,na.strings=c(""," "))
+dbWriteTable(conn,"CHRONIC_DX_CD",chronic_icd,temporary=T,overwrite=T)
+
+sql<-parse_sql("./inst/collect_chronic_dx.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date)
 
 execute_single_sql(conn,
                    statement=sql$statement,

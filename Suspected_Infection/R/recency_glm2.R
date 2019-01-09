@@ -19,15 +19,19 @@ y_mt<-Xy_sparse$y_mt
 
 ##==============minimal set exploration=============
 #select variables
-glm_out<-readRDS("./output/glm1_rec_fs1251.rda")
+glm_out<-readRDS("./output/glm1_rec_fs1242.rda")
 var_imp<-glm_out$var_imp
 P<-nrow(var_imp)
-k<-200 #0.9146-0.9192 (DeLong)
-# k<-100 # 0.894-0.90 (DeLong)
-# k<-50 # 0.8815-0.8868 (DeLong)
-# k<-25 #0.8754-0.881 (DeLong)
+# k<-10 #0.7954, 95% CI: 0.7915-0.7994 (DeLong)
+# k<-20 #0.8118, 95% CI: 0.808-0.8157 (DeLong)
+# k<-50 #0.8306, 95% CI: 0.827-0.8343 (DeLong)
+# k<-100 #0.8394, 95% CI: 0.8358-0.8429 (DeLong)
+k<-150 #0.8427, 95% CI: 0.8392-0.8462 (DeLong)
+# k<-200 #0.8444, 95% CI: 0.841-0.8479 (DeLong)
 
-demo<-c("AGE_GRP","RACE_","SEX_MALE","ETHNICITY","MARRIED_STATUS","LANGUAGE")  
+
+
+demo<-c("AGE_GRP","SEX_MALE")  
 var_lst<-c(which(grepl(paste0("(",paste(demo,collapse=")|("),")"),colnames(x_mt))),
            which(colnames(x_mt) %in% var_imp$Feature[seq_len(k)]))
 
@@ -125,9 +129,13 @@ var_imp2 %<>%
 
 ##=============================finalize results==================================
 #check performace before saving the results
+pROC::auc(valid$real,valid$pred)
 pROC::ci.auc(valid$real,valid$pred)
 
 # save results
+var_imp2 %<>%
+  mutate(Feature=ifelse(grepl("((\\_low)|(\\_high)|(\\_miss))+",Feature),Feature,
+                        paste0(Feature,"_","bin")))
 glm_out<-list(valid_out=rbind(valid_cv,valid),
               model=fit_glm,
               var_imp=var_imp2,

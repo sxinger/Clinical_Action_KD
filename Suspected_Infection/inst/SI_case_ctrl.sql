@@ -9,9 +9,22 @@
 /********************************************************************************/
 create table SI_case_ctrl as
 with ctrl_tri as (
-select e.patient_num,e.encounter_num,e.triage_start,e.first_fact_dt,e.enc_end
+select e.patient_num,e.encounter_num,e.triage_start,e.first_fact_dt,e.last_fact_dt,e.enc_end
 from ED_eligb e
 where not exists (select 1 from ED_SI si where e.patient_num=si.patient_num and e.encounter_num=si.encounter_num)
+)
+    ,disch_ud as (
+select ctrl_tri.patient_num
+      ,ctrl_tri.encounter_num
+      ,ctrl_tri.triage_start
+      ,ctrl_tri.first_fact_dt
+      ,ctrl_tri.last_fact_dt
+      ,max(least(greatest(ctrl_tri.enc_end,ctrl_tri.triage_start),coalesce(obs.start_date,ctrl_tri.last_fact_dt))) enc_end
+from ctrl_tri
+left join &&i2b2data.observation_fact@dblink obs
+on ctrl_tri.patient_num = obs.patient_num and ctrl_tri.encounter_num = obs.encounter_num and
+   obs.concept_cd = 'KUMC|REPORTS|NOTETYPES:600000'
+group by ctrl_tri.patient_num,ctrl_tri.encounter_num,ctrl_tri.triage_start,ctrl_tri.first_fact_dt,ctrl_tri.last_fact_dt
 )
    ,ctrl as (
 select tri.patient_num
@@ -19,6 +32,7 @@ select tri.patient_num
       ,a.abx_name antibio_subtype
       ,tri.triage_start
       ,tri.first_fact_dt
+      ,tri.last_fact_dt
       ,round(c.start_since_triage,2) c_since_triage
       ,round(a.start_since_triage,2) abx_since_triage
       ,(tri.enc_end-tri.triage_start)*24 end_since_triage
@@ -35,6 +49,7 @@ select si.patient_num
       ,si.antibio_subtype
       ,tri.triage_start
       ,tri.first_fact_dt
+      ,tri.last_fact_dt
       ,si.c_since_triage
       ,si.abx_since_triage
       ,si.si_since_triage
@@ -49,6 +64,7 @@ select ctrl.patient_num
       ,ctrl.antibio_subtype
       ,ctrl.triage_start
       ,ctrl.first_fact_dt
+      ,ctrl.last_fact_dt
       ,ctrl.c_since_triage
       ,ctrl.abx_since_triage
       ,null si_since_triage
@@ -72,6 +88,7 @@ select cc.patient_num
       ,cc.antibio_subtype
       ,cc.triage_start
       ,cc.first_fact_dt
+      ,cc.last_fact_dt
       ,noned.ServDep_name
       ,noned.IO_time trans_time
       ,cc.c_since_triage

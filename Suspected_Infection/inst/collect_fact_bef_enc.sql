@@ -21,6 +21,8 @@ select tr.patient_num
       ,obs.modifier_cd
       ,obs.start_date start_dt
       ,round(obs.start_date-tr.triage_start) day_bef_triage
+      ,row_number() over (partition by tr.patient_num, tr.encounter_num, obs.concept_cd order by obs.start_date) rn
+      ,row_number() over (partition by tr.patient_num, tr.encounter_num, obs.concept_cd order by obs.start_date desc) rn_desc
 from SI_case_ctrl tr
 join &&i2b2data.observation_fact@dblink obs
 on tr.patient_num = obs.patient_num

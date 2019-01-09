@@ -51,8 +51,8 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
   chk_i<-dbGetQuery(conn,
                     paste0("select * from SI_OBS_AT_ENC where CONCEPT_PREFIX ='",
                            chunk_id$CONCEPT_PREFIX[i],"'")) %>%
-    left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
-              by=c("PATIENT_NUM","ENCOUNTER_NUM"))
+    inner_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
+               by=c("PATIENT_NUM","ENCOUNTER_NUM"))
   
   #--re-construct variables
   if(chunk_id$CONCEPT_PREFIX[i] %in% c("KUH|MEDICATION_ID")){
@@ -223,16 +223,14 @@ feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
   dplyr::slice(1:1) %>%
   ungroup
 
-
-#===============pre-filter: frequency (5%)=====
+#===============pre-filter: frequency (5%)
 freq_filter_rt<-0.05
 data_at_enc %<>% 
   dplyr::select(-CASE_CTRL) %>%
   semi_join(feat_at_enc2 %>% filter(enc_wi >= round(freq_filter_rt*N)),
             by="VARIABLE")
 
-#===============attach patient level info=====
-data_at_enc<-readRDS("./data/data_at_enc.rda")
+#===============attach patient level info
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
 pat_at_enc2<-pat_at_enc %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,AGE,SEX_MALE) %>%
@@ -268,7 +266,7 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
   
   chk_i<-dbGetQuery(conn,
                     paste0("select distinct patient_num,encounter_num,concept_cd,day_bef_triage 
-                           from SI_OBS_BEF_ENC where CONCEPT_PREFIX ='",
+                           from SI_OBS_BEF_ENC where rn_desc=1 and CONCEPT_PREFIX ='",
                            chunk_id$CONCEPT_PREFIX[i],"'")) %>%
     left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
               by=c("PATIENT_NUM","ENCOUNTER_NUM"))
@@ -327,9 +325,6 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
 
 
 #=====pre-filter: frequency
-data_bef_enc<-readRDS("./data/data_bef_enc.rda")
-feat_bef_enc<-readRDS("./data/feat_bef_enc.rda")
-  
 freq_filter_rt<-0.05
 data_bef_enc %<>% 
   dplyr::select(-CASE_CTRL) %>%

@@ -5,12 +5,13 @@ setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
 source("./R/util.R")
 require_libraries(c( "dplyr"
-                     ,"tidyr"
-                     ,"magrittr"
-                     ,"stringr"))
+                    ,"tidyr"
+                    ,"magrittr"
+                    ,"stringr"))
 
 rs_idx<-readRDS("./data/rand_idx.rda")
 
+#------------------------demographics--------------------------------------------------
 demo_master<-pat_at_enc %>%
   left_join(rs_idx %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
             by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
@@ -60,12 +61,29 @@ demo_master2 %>%
                 enc_cnt_1,enc_prop_1) %>%
   arrange(demo_type,desc(enc_cnt_0)) %>%
   View
+#---------------------------------------------------------------------------------------
 
-#observation time window
+
+#--------------observation time window-------------
+brks<-c(seq(0,24,1),48,72,Inf)
+
 #--si timing
-rs_idx %>%
-  filter(CASE_CTRL==1) %>% 
-  dplyr::mutate(si_loc=case_when(SI_SINCE_TRIAGE<=TRANS_SINCE_TRIAGE|is.na(TRANS_SINCE_TRIAGE)~"ED",
+si_tm<-rs_idx %>%
+  filter(CASE_CTRL==1) %>%
+  mutate(SI_time_grp=cut(SI_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         C_time_grp=cut(C_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         ABX_time_grp=cut(ABX_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         early_transition=case_when(!is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE < TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "Culture and ABX within ED; Transitioned",
+                                    !is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE < TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE>=TRANS_SINCE_TRIAGE ~ "Culture within ED; ABX after ED; Transitioned",
+                                    !is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE>=TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "ABX within ED; Culture after ED; Transitioned",
+                                    TRUE ~ "Culture and ABX within ED; Discharged"),
+         CALYR=as.numeric(format(TRIAGE_START,"%Y")))
+
+saveRDS(si_tm,file="./data/SI_timing_dist.rda")
+
+#identify outlier and collect summary
+si_tm %>%
+  dplyr::mutate(si_loc=case_when(SI_SINCE_TRIAGE<=TRANS_SINCE_TRIAGE|is.na(TRANS_SINCE_TRIAGE)~"ED_discharge",
                                  SI_SINCE_TRIAGE>TRANS_SINCE_TRIAGE ~ SERVDEP_NAME)) %>%
   group_by(si_loc) %>%
   dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),
@@ -76,12 +94,32 @@ rs_idx %>%
                    si_q3=quantile(SI_SINCE_TRIAGE,probs=0.75,na.rm=T),
                    si_p95=quantile(SI_SINCE_TRIAGE,probs=0.95,na.rm=T),
                    si_max=max(SI_SINCE_TRIAGE,na.rm=T)) %>%
-  ungroup %>%
+  ungroup %>% arrange(desc(enc_cnt)) %>%
   View
 
+
 #--transfer timing
-rs_idx %>%
-  filter(CASE_CTRL==0) %>% 
+nonsi_tm<-rs_idx %>%
+  filter(CASE_CTRL==0) %>%
+  mutate(TRANS_time_grp=cut(TRANS_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         C_time_grp=cut(C_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         ABX_time_grp=cut(ABX_SINCE_TRIAGE,breaks=brks,include.lowest=T,labels=F),
+         early_transition=case_when(!is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE < TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "Culture and ABX within ED; Transitioned",
+                                    !is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE < TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE>=TRANS_SINCE_TRIAGE ~ "Culture within ED; ABX after ED; Transitioned",
+                                    !is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE>=TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "ABX within ED; Culture after ED; Transitioned",
+                                    is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE>=TRANS_SINCE_TRIAGE&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "Culture and ABX within ED; Discharged",
+                                    is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&is.na(ABX_SINCE_TRIAGE)&C_SINCE_TRIAGE<TRANS_SINCE_TRIAGE ~ "Culture within ED; Discharged",
+                                    is.na(TRANS_SINCE_TRIAGE)&is.na(C_SINCE_TRIAGE)&!is.na(ABX_SINCE_TRIAGE)&ABX_SINCE_TRIAGE < TRANS_SINCE_TRIAGE ~ "ABX within ED; Discharged",
+                                    !is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&is.na(ABX_SINCE_TRIAGE) ~ "No ABX with Culture; Transitioned",
+                                    is.na(TRANS_SINCE_TRIAGE)&!is.na(C_SINCE_TRIAGE)&is.na(ABX_SINCE_TRIAGE) ~ "No ABX with Culture; Discharged",
+                                    !is.na(TRANS_SINCE_TRIAGE)&is.na(C_SINCE_TRIAGE)&is.na(ABX_SINCE_TRIAGE) ~ "No ABX and No Culture; Transitioned",
+                                    TRUE ~ "No ABX and No Culture; Discharged"),
+         CALYR=as.numeric(format(TRIAGE_START,"%Y")))
+
+saveRDS(nonsi_tm,file="./data/NONSI_timing_dist.rda")
+
+#identify outlier and collect summary
+nonsi_tm %>%
   group_by(SERVDEP_NAME) %>%
   dplyr::summarise(enc_cnt=length(unique(ENCOUNTER_NUM)),
                    si_min=min(TRANS_SINCE_TRIAGE,na.rm=T),
@@ -93,6 +131,7 @@ rs_idx %>%
                    si_max=max(TRANS_SINCE_TRIAGE,na.rm=T)) %>%
   ungroup %>%
   View
+
 
 #--discharge timing
 rs_idx %>%

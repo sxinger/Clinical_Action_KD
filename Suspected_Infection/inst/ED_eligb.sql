@@ -14,6 +14,7 @@ select te.patient_num
       ,te.encounter_num
       ,te.triage_start
       ,min(obs.start_date) first_fact_dt
+      ,max(obs.start_date) last_fact_dt
       ,te.enc_end
 --      ,least(te.triage_start,min(obs.start_date)) triage_start
 from ED_18up te

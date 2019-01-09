@@ -142,8 +142,8 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-glm_out<-readRDS("./output/glm1_rec_fs1543.rda")
+glm_out<-readRDS("./output/glm1_rec_fs1242.rda")
 var_imp<-glm_out$var_imp
 valid<-glm_out$valid_out %>% filter(valid_type=="V")
 pROC::ci.auc(valid$real,valid$pred)
-# 95% CI: 0.9193-0.9218 (DeLong)
+# 95% CI: 0.8451-0.8519 (DeLong)

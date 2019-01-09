@@ -1,4 +1,4 @@
-DX_type,DX_code,DX,weight
+DX_TYPE,DX_CODE,DX,WEIGHT
 ICD9,410,Myocardial Infarction,1
 ICD9,412,Myocardial Infarction,1
 ICD10,I21,Myocardial Infarction,1
@@ -521,7 +521,7 @@ ICD10,K72.9,Moderate or Severe Liver Disease,3
 ICD10,K76.5,Moderate or Severe Liver Disease,3
 ICD10,K76.6,Moderate or Severe Liver Disease,3
 ICD10,K76.7,Moderate or Severe Liver Disease,3
-ICD9,196–199 ,Metastatic Carcinoma ,6
+ICD9,196?199 ,Metastatic Carcinoma ,6
 ICD10,C77,Metastatic Carcinoma ,6
 ICD10,C78,Metastatic Carcinoma ,6
 ICD10,C79,Metastatic Carcinoma ,6

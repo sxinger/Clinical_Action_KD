@@ -13,6 +13,7 @@ require_libraries(c("Matrix",
 
 ## load data
 rs_idx<-readRDS("./data/SI_enroll.rda") %>%
+  filter(PRED_POINT <= 48) %>%
   dplyr::mutate(part73 = sample(c("T","V"),prob=c(0.7,0.3),n(),replace=T),
                 cv10 = sample(1:10,n(),replace=T))
 
