@@ -25,11 +25,29 @@ select 'Culture_Antibio_within_4hr' CNT_TYPE,
        count(distinct encounter_num) ENC_CNT
 from ED_SI
 union all
-select ('Final_Case_Ctrl_' || case_ctrl),
+select ('Final_Case_Ctrl_' || case_ctrl) CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
 group by case_ctrl
+union all
+select 'nonSI_w_ABX_w_Culture' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is not null and c_since_triage is not null
+union all
+select 'nonSI_no_ABX_w_Culture' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is null and c_since_triage is not null
+union all
+select 'nonSI_no_Culture_no_ABX' CNT_TYPE,
+       count(distinct patient_num) PAT_CNT,
+       count(distinct encounter_num) ENC_CNT
+from SI_case_ctrl
+where si_since_triage is null and abx_since_triage is null and abx_since_triage is null and c_since_triage is null
 union all
 select 'SI_within_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
@@ -54,7 +72,7 @@ select 'SI_transition_undetermined' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
-where si_since_triage is not null and trans_since_triage<0
+where si_since_triage is not null and trans_since_triage < 0
 union all
 select 'nonSI_discharge_at_ED' CNT_TYPE,
        count(distinct patient_num) PAT_CNT,
@@ -80,23 +98,5 @@ select 'nonSI_transition_undetermined' CNT_TYPE,
        count(distinct encounter_num) ENC_CNT
 from SI_case_ctrl
 where si_since_triage is null and trans_since_triage<0
-union all
-select 'nonSI_w_ABX_w_Culture' CNT_TYPE,
-       count(distinct patient_num) PAT_CNT,
-       count(distinct encounter_num) ENC_CNT
-from SI_case_ctrl
-where si_since_triage is null and abx_since_triage is not null and c_since_triage is not null
-union all
-select 'nonSI_no_ABX_w_Culture' CNT_TYPE,
-       count(distinct patient_num) PAT_CNT,
-       count(distinct encounter_num) ENC_CNT
-from SI_case_ctrl
-where si_since_triage is null and abx_since_triage is null and c_since_triage is not null
-union all
-select 'nonSI_no_Culture_no_ABX' CNT_TYPE,
-       count(distinct patient_num) PAT_CNT,
-       count(distinct encounter_num) ENC_CNT
-from SI_case_ctrl
-where si_since_triage is null and abx_since_triage is null and abx_since_triage is null and c_since_triage is null
 
 

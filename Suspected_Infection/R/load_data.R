@@ -15,13 +15,22 @@ config_file<-read.csv('./config.csv')
 conn<-connect_to_db("Oracle","OCI",config_file)
 
 ##=======load cohort=========
-enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL")
+enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL") %>%
+  filter(DT_CLASS != "U") %>% # remove people with undetermined transition time
+  filter(!(CASE_CTRL==0 & !is.na(ABX_SINCE_TRIAGE))) %>% #remove unclear nonSI cases
+  filter((SI_SINCE_TRIAGE <= coalesce(TRANS_SINCE_TRIAGE)) | is.na(SI_SINCE_TRIAGE)) #only use cases with SI discovered within ED
+
 N<-length(unique(enroll$ENCOUNTER_NUM))
 P<-sum(enroll$CASE_CTRL)
-# saveRDS(enroll,file="./data/SI_enroll.rda")
+
+#========save data
+saveRDS(enroll,file="./data/SI_enroll.rda")
+
 
 ##==============load patient-level data==================
-pat_at_enc<-dbGetQuery(conn,"select * from SI_PAT_AT_ENC")
+pat_at_enc<-dbGetQuery(conn,"select * from SI_PAT_AT_ENC") %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%    #patient filter
+  filter(!duplicated(ENCOUNTER_NUM))
 
 #========save data
 saveRDS(pat_at_enc,file="./data/pat_at_enc.rda")
@@ -32,7 +41,8 @@ chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_AT_ENC")
 chunk_id %<>% 
   filter(!CONCEPT_PREFIX %in% c("KUH|HOSP_ADT_CLASS",           #ADT class
                                 "KUMC|VISITDETAIL|HSPSERVICES", #hospital service department --daily
-                                "KUMC|REPORTS|NOTETYPES",       #tval_char contains narrative texts --NLP needed
+                                "KUMC|VISITDETAIL|POS(O2)",     #hospital service department --daily
+                                # "KUMC|REPORTS|NOTETYPES",     #tval_char contains narrative texts --NLP needed
                                 "KUMC|SMRT|N",                  #smart field in notes --not informative
                                 "KUMC|DischargeDisposition",    #discharge disposition --post events
                                 "CPT",                          #procedure-billing
@@ -223,13 +233,6 @@ feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
   dplyr::slice(1:1) %>%
   ungroup
 
-#===============pre-filter: frequency (5%)
-freq_filter_rt<-0.05
-data_at_enc %<>% 
-  dplyr::select(-CASE_CTRL) %>%
-  semi_join(feat_at_enc2 %>% filter(enc_wi >= round(freq_filter_rt*N)),
-            by="VARIABLE")
-
 #===============attach patient level info
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
 pat_at_enc2<-pat_at_enc %>%
@@ -244,7 +247,40 @@ pat_at_enc2<-pat_at_enc %>%
               unite("VARIABLE",c("VARIABLE","TVAL_CHAR2")) %>%
               mutate(NVAL_NUM=1,START_SINCE_TRIAGE=0))
 
-data_at_enc %<>% bind_rows(pat_at_enc2)
+data_at_enc %<>%
+  dplyr::select(-CASE_CTRL) %>%
+  bind_rows(pat_at_enc2)
+
+#------------augment feature dictionary with patient-level info
+feat_at_enc2 %<>%
+  bind_rows(pat_at_enc2 %>%
+              left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
+                        by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+              group_by(VARIABLE,TVAL_CHAR) %>%
+              dplyr::summarize(enc_wi = length(unique(ENCOUNTER_NUM)),
+                               enc_wo = N-length(unique(ENCOUNTER_NUM)),
+                               pos_wi = length(unique(ENCOUNTER_NUM*CASE_CTRL))-1,
+                               pos_wo = P-(length(unique(ENCOUNTER_NUM*CASE_CTRL))-1),
+                               q_min=0,q_10=round(length(unique(ENCOUNTER_NUM))/N,2),q_max=1) %>%
+              ungroup %>%
+              dplyr::mutate(neg_wi=enc_wi-pos_wi,
+                            neg_wo=enc_wo-pos_wo) %>%
+              dplyr::mutate(pos_p_wi=pos_wi/enc_wi,
+                            pos_p_wo=pos_wo/enc_wo) %>%
+              dplyr::mutate(odds_ratio_emp=round(pos_p_wi/pos_p_wo,2),
+                            log_odds_ratio_sd=sqrt(1/pos_wi+1/pos_wo+1/neg_wi+1/neg_wo)) %>%
+              dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp)-1.96*log_odds_ratio_sd),
+                            odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd)) %>%
+              dplyr::rename(CONCEPT_CD=TVAL_CHAR) %>%
+              dplyr::mutate(NAME_CHAR=CONCEPT_CD,
+                            CONCEPT_PATH="patient_dimension"))
+#-------------------------------------------------------------------------------------------------------------
+
+#===============pre-filter: frequency (5%)
+freq_filter_rt<-0.05
+data_at_enc %<>% 
+  semi_join(feat_at_enc2 %>% filter(enc_wi >= round(freq_filter_rt*N)),
+            by="VARIABLE")
 
 #========save data
 saveRDS(data_at_enc,file="./data/data_at_enc.rda")

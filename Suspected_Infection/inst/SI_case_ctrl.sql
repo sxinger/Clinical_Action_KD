@@ -1,30 +1,48 @@
 /*******************************************************************************/
 /*@file SI_case_ctrl.sql
 /*
-/*in: ED_SI, ED_eligb, SI_ServDep
+/*in: ED_SI, ED_eligb, SI_ServDep, observation_fact
+/*
+/*params: @dblink, &&i2b2
 /*
 /*out: SI_case_ctrl
 /*
 /*action: write
 /********************************************************************************/
 create table SI_case_ctrl as
-with ctrl_tri as (
-select e.patient_num,e.encounter_num,e.triage_start,e.first_fact_dt,e.last_fact_dt,e.enc_end
+with disch_ud as (
+select e.patient_num
+      ,e.encounter_num
+      ,e.triage_start
+      ,e.first_fact_dt
+      ,e.last_fact_dt
+      ,max(least(greatest(e.enc_end,e.triage_start),coalesce(obs.start_date,e.last_fact_dt))) enc_end
 from ED_eligb e
-where not exists (select 1 from ED_SI si where e.patient_num=si.patient_num and e.encounter_num=si.encounter_num)
-)
-    ,disch_ud as (
-select ctrl_tri.patient_num
-      ,ctrl_tri.encounter_num
-      ,ctrl_tri.triage_start
-      ,ctrl_tri.first_fact_dt
-      ,ctrl_tri.last_fact_dt
-      ,max(least(greatest(ctrl_tri.enc_end,ctrl_tri.triage_start),coalesce(obs.start_date,ctrl_tri.last_fact_dt))) enc_end
-from ctrl_tri
 left join &&i2b2data.observation_fact@dblink obs
-on ctrl_tri.patient_num = obs.patient_num and ctrl_tri.encounter_num = obs.encounter_num and
-   obs.concept_cd = 'KUMC|REPORTS|NOTETYPES:600000'
-group by ctrl_tri.patient_num,ctrl_tri.encounter_num,ctrl_tri.triage_start,ctrl_tri.first_fact_dt,ctrl_tri.last_fact_dt
+on e.patient_num = obs.patient_num and e.encounter_num = obs.encounter_num and
+   obs.concept_cd in ('KUMC|REPORTS|NOTETYPES:5',
+                      'KUMC|REPORTS|NOTETYPES:60',
+                      'KUMC|REPORTS|NOTETYPES:600000',
+                      'KUMC|REPORTS|NOTETYPES:600028',
+                      'KUMC|REPORTS|NOTETYPES:600069',
+                      'KUMC|REPORTS|NOTETYPES:600070',
+                      'KUMC|REPORTS|NOTETYPES:600071',
+                      'KUMC|REPORTS|NOTETYPES:600072',
+                      'KUMC|REPORTS|NOTETYPES:61',
+                      'KUMC|REPORTS|NOTETYPES:62',
+                      'KUMC|REPORTS|NOTETYPES:63',
+                      'KUMC|REPORTS|NOTETYPES:64',
+                      'KUMC|REPORTS|NOTETYPES:65',
+                      'KUMC|REPORTS|NOTETYPES:66',
+                      'KUMC|REPORTS|NOTETYPES:67',
+                      'KUMC|REPORTS|NOTETYPES:68') and
+    obs.start_date > e.triage_start 
+group by e.patient_num,e.encounter_num,e.triage_start,e.first_fact_dt,e.last_fact_dt
+)
+   ,ctrl_tri as (
+select eu.patient_num,eu.encounter_num,eu.triage_start,eu.first_fact_dt,eu.last_fact_dt,eu.enc_end
+from disch_ud eu
+where not exists (select 1 from ED_SI si where eu.patient_num=si.patient_num and eu.encounter_num=si.encounter_num)
 )
    ,ctrl as (
 select tri.patient_num
@@ -56,7 +74,7 @@ select si.patient_num
       ,round((tri.enc_end-tri.triage_start)*24,2) end_since_triage
       ,1 case_ctrl
 from ED_SI si
-left join ED_eligb tri
+left join disch_ud tri
 on si.patient_num = tri.patient_num and si.encounter_num = tri.encounter_num
 union all
 select ctrl.patient_num
@@ -79,9 +97,19 @@ select patient_num
       ,ServDep_name
       ,IO_time
       ,hr_since_triage
-      ,row_number() over (partition by patient_num,encounter_num order by IO_time) rn
 from SI_ServDep
-where IO_time is not null
+where post_triage_ind = 1 and rn = 1
+)
+   ,nonED_enc2 as (
+select s.patient_num
+      ,s.encounter_num
+      ,s.ServDep_name
+      ,s.IO_time
+      ,s.hr_since_triage
+from SI_ServDep s
+where not exists (select 1 from nonED_enc ned
+                  where ned.patient_num = s.patient_num and ned.encounter_num = s.encounter_num) and
+      s.rn = 1
 )
 select cc.patient_num
       ,cc.encounter_num
@@ -96,11 +124,15 @@ select cc.patient_num
       ,cc.si_since_triage
       ,noned.hr_since_triage trans_since_triage
       ,cc.end_since_triage
-      ,coalesce(cc.SI_since_triage,case when noned.hr_since_triage>0 then hr_since_triage else null end,cc.end_since_triage) pred_point
+      ,coalesce(cc.SI_since_triage,noned.hr_since_triage,cc.end_since_triage) pred_point
       ,cc.case_ctrl
+      ,case when noned.hr_since_triage is not null and noned.hr_since_triage > 0 then 'T'
+            when noned.hr_since_triage <= 0 then 'U'
+            else 'D'
+       end as DT_class
 from case_ctrl cc
-left join nonED_enc noned
-on cc.patient_num = noned.patient_num and cc.encounter_num = noned.encounter_num and noned.rn = 1
+left join (select * from nonED_enc union all select * from nonED_enc2) noned
+on cc.patient_num = noned.patient_num and cc.encounter_num = noned.encounter_num
 
 
 

@@ -14,15 +14,14 @@ require_libraries(c("Matrix",
 
 ##==============load data==============
 data_at_enc<-readRDS("./data/data_at_enc.rda")
-rs_idx<-readRDS("./data/rand_idx.rda")
-
+enroll<-readRDS("./data/SI_enroll.rda")
 
 ##=============pick out numerical variables=============
 num_var<-readRDS("./data/feat_at_enc.rda") %>%
   filter(!is.na(q_1))
 
 data_at_enc_discrt<-data_at_enc %>%
-  semi_join(rs_idx,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   inner_join(num_var %>% dplyr::select(VARIABLE,q_5,q_10,q_15),
              by="VARIABLE") 
 
@@ -40,8 +39,8 @@ data_at_enc_discrt1<-data_at_enc_discrt %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
 data_at_enc_discrt2<-data_at_enc_discrt %>%
-  dplyr::mutate(VARIABLE=paste0("num_",VARIABLE),
-                TVAL_CHAR=paste0(VARIABLE,"_bin"),
+  dplyr::mutate(TVAL_CHAR=paste0(VARIABLE,"_bin"),
+                VARIABLE=paste0("num_",VARIABLE),
                 NVAL_NUM=1) %>%
   group_by(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,TVAL_CHAR) %>%
   top_n(n=1L,wt=-START_SINCE_TRIAGE) %>%
@@ -49,16 +48,16 @@ data_at_enc_discrt2<-data_at_enc_discrt %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
 data_at_enc %<>%
-  semi_join(rs_idx,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   anti_join(num_var,by="VARIABLE") %>%
   bind_rows(data_at_enc_discrt1) %>%
   bind_rows(data_at_enc_discrt2)
 
 #-----------augment feature dictionary with the discretized features-----------
-N<-nrow(rs_idx)
-P<-sum(rs_idx$CASE_CTRL)
-feat_enc_dscrt<-data_at_enc_discrt2 %>%
-  left_join(rs_idx %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
+N<-nrow(enroll)
+P<-sum(enroll$CASE_CTRL)
+feat_enc_dscrt<-data_at_enc_discrt1 %>%
+  left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
             by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   group_by(VARIABLE,TVAL_CHAR) %>%
   dplyr::summarize(enc_wi = length(unique(ENCOUNTER_NUM)),
@@ -74,12 +73,14 @@ feat_enc_dscrt<-data_at_enc_discrt2 %>%
   dplyr::mutate(odds_ratio_emp=round(pos_p_wi/pos_p_wo,2),
                 log_odds_ratio_sd=sqrt(1/pos_wi+1/pos_wo+1/neg_wi+1/neg_wo)) %>%
   dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp)-1.96*log_odds_ratio_sd),
-                odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd))
+                odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd)) %>%
+  dplyr::rename(CONCEPT_CD=TVAL_CHAR) %>%
+  left_join(num_var %>% dplyr::select(VARIABLE,NAME_CHAR,CONCEPT_PATH,CONCEPT_TYPE,CODE) %>%
+              mutate(VARIABLE=paste0("num_",VARIABLE)),
+            by="VARIABLE")
 
 feat_at_enc<-readRDS("./data/feat_at_enc.rda") %>%
   bind_rows(feat_enc_dscrt)
-
-saveRDS(feat_at_enc,file="./data/feat_at_enc.rda")
 
 #--------------------------------------------------------------------------------------
 
@@ -108,10 +109,10 @@ data_at_enc %<>%
   bind_rows(age_discrt)
 
 #------------augment feature dictionary with the discretized features-------------
-N<-nrow(rs_idx)
-P<-sum(rs_idx$CASE_CTRL)
+N<-nrow(enroll)
+P<-sum(enroll$CASE_CTRL)
 feat_enc_dscrt<-age_discrt %>%
-  left_join(rs_idx %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
+  left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
             by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   group_by(VARIABLE,TVAL_CHAR) %>%
   dplyr::summarize(enc_wi = length(unique(ENCOUNTER_NUM)),
@@ -127,12 +128,15 @@ feat_enc_dscrt<-age_discrt %>%
   dplyr::mutate(odds_ratio_emp=round(pos_p_wi/pos_p_wo,2),
                 log_odds_ratio_sd=sqrt(1/pos_wi+1/pos_wo+1/neg_wi+1/neg_wo)) %>%
   dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp)-1.96*log_odds_ratio_sd),
-                odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd))
+                odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd)) %>%
+  dplyr::rename(CONCEPT_CD=TVAL_CHAR) %>%
+  dplyr::mutate(NAME_CHAR=CONCEPT_CD,
+                CONCEPT_PATH="patient_dimension")
 
-feat_at_enc<-readRDS("./data/feat_at_enc.rda") %>%
+feat_at_enc %<>%
   bind_rows(feat_enc_dscrt)
 
-saveRDS(feat_at_enc,file="./data/feat_at_enc.rda")
+saveRDS(feat_at_enc,file="./data/feat_at_enc_aug.rda")
 #----------------------------------------------------------------------------------
 
 #========save data============

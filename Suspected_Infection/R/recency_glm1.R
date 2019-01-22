@@ -18,18 +18,20 @@ x_mt<-Xy_sparse$x_mt
 y_mt<-Xy_sparse$y_mt
 
 ##================partition==================
-train_mt<-cbind(x_mt[which(y_mt$part73=="T"),],
-                label=y_mt[which(y_mt$part73=="T"),]$CASE_CTRL)
+sample_idx<-readRDS("./data/sample_idx.rda")
 
-test_mt<-cbind(x_mt[which(y_mt$part73=="V"),],
-               label=y_mt[which(y_mt$part73=="V"),]$CASE_CTRL)
+train_mt<-cbind(x_mt[which(sample_idx$rs$rs_part73=="T"),],
+                label=y_mt[which(sample_idx$rs$rs_part73=="T"),]$CASE_CTRL)
+
+test_mt<-cbind(x_mt[which(sample_idx$rs$rs_part73=="V"),],
+               label=y_mt[which(sample_idx$rs$rs_part73=="V"),]$CASE_CTRL)
 
 ##=================tune=========================
 #initialize h2o
 h2o.init(nthreads=-1)
 
 ## global parameters
-hyper_params<-list(alpha=c(1,0.8,0.5))
+hyper_params<-list(alpha=c(1,0.8,0.5,0.3))
 
 pred_idx<-which(!colnames(train_mt) %in% c("label"))
 target_idx<-which(colnames(train_mt)=="label")
@@ -83,7 +85,7 @@ valid<-data.frame(ENCOUNTER_NUM = row.names(test_mt),
                   stringsAsFactors = F)
 
 ##============================= variable importance
-feat_dict<-readRDS("./data/feat_at_enc.rda") %>%
+feat_dict<-readRDS("./data/feat_at_enc_aug.rda") %>%
   bind_rows(readRDS("./data/feat_bef_enc.rda")) %>%
   dplyr::select(VARIABLE,CONCEPT_CD,NAME_CHAR,CONCEPT_PATH,enc_wi,odds_ratio_emp)
 
@@ -100,22 +102,6 @@ var_imp2<-var_imp %>% filter(!is.na(NAME_CHAR)) %>%
               dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
               left_join(feat_dict %>% dplyr::select(-VARIABLE),
                         by=c("Feature"="CONCEPT_CD")))
-
-var_imp2<-var_imp2 %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp2 %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
-              mutate(Feature2=gsub("_[^\\_]+$","",Feature)) %>%
-              left_join(feat_dict %>% dplyr::select(-CONCEPT_CD),
-                        by=c("Feature2"="VARIABLE")) %>%
-              dplyr::select(-Feature2))
-
-var_imp2<-var_imp2 %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp2 %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
-              mutate(Feature2=gsub("_[^\\_]+$","",gsub("_[^\\_]+$","",Feature))) %>%
-              left_join(feat_dict %>% dplyr::select(-CONCEPT_CD),
-                        by=c("Feature2"="VARIABLE")) %>%
-              dplyr::select(-Feature2))
 
 var_imp2 %<>%
   dplyr::select(-CONCEPT_CD) %>%
