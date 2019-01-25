@@ -63,7 +63,7 @@ where am.start_since_triage-c.start_since_triage between 0 and 4
 )
   ,si_events as (
 select id_si.*
-      ,row_number() over (partition by id_si.patient_num, id_si.encounter_num order by id_si.si_date,antibio_val, injectable_ind desc) rn_enc
+      ,row_number() over (partition by id_si.patient_num, id_si.encounter_num order by id_si.si_date, id_si.antibio_val, id_si.injectable_ind desc) rn_enc
 from id_si
 left join ED_eligb enc
 on id_si.patient_num = enc.patient_num and 

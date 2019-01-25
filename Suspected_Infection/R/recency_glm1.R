@@ -118,8 +118,10 @@ glm_out<-list(valid_out=rbind(valid_cv,valid),
               var_imp=var_imp2,
               hyper_param=alpha_opt)
 
-pROC::ci.auc(valid$real,valid$pred)
-k<-nrow(var_imp)
+pROC::auc(valid$real,valid$pred) #0.9205
+pROC::ci.auc(valid$real,valid$pred) #95% CI: 0.9161-0.9248 (DeLong)
+
+k<-nrow(var_imp) #1129
 saveRDS(glm_out,file=paste0("./output/glm1_rec_fs",k,".rda"))
 
 
@@ -128,7 +130,8 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-glm_out<-readRDS("./output/glm1_rec_fs1242.rda")
+k<-1129
+glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
 var_imp<-glm_out$var_imp
 valid<-glm_out$valid_out %>% filter(valid_type=="V")
 pROC::ci.auc(valid$real,valid$pred)

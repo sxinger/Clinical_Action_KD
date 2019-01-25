@@ -22,7 +22,9 @@ data_at_enc %<>%
 cd_out<-c("KUH\\|FLO_MEAS_ID",
           "KUH\\|MEDICATION_ID",
           "KUH\\|DX_ID",
-          "KUMC\\|REPORTS\\|NOTETYPES")
+          "KUMC\\|REPORTS\\|NOTETYPES",
+          "RELIGION",
+          "LANGUAGE")
 
 #identify diagnostic folders in KU ED
 ed_cd<-readRDS("./data/feat_at_enc.rda") %>% 
@@ -30,7 +32,7 @@ ed_cd<-readRDS("./data/feat_at_enc.rda") %>%
   dplyr::select(VARIABLE,CONCEPT_CD,CONCEPT_PATH)
 
 #hand-pick flowsheet concepts of interest
-cd_in<-unique(c(ed_cd[grepl("\\\\TMP VITAL SIGNS",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #vital in ED
+cd_in<-unique(c(ed_cd[grepl("\\\\TMP VITAL SIGNS",ed_cd$CONCEPT_PATH)&!grepl("(( SOURCE )|( METHOD )|( POSITION ))+",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #vital in ED
                 # ed_cd[grepl("\\\\TMP AIRWAY/BREATHING",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #airway/breathing in ED
                 # ed_cd[grepl("\\\\TMP CIRCULATION NAV",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #circulation in ED
                 ed_cd[grepl("\\\\TMP CORE MEASURES",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED core measures
@@ -41,7 +43,7 @@ cd_in<-unique(c(ed_cd[grepl("\\\\TMP VITAL SIGNS",ed_cd$CONCEPT_PATH),]$CONCEPT_
                 ed_cd[grepl("\\\\TMP PAIN ASSESSMENT",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED pain assessment
                 ed_cd[grepl("\\\\TMP NAV PRIMARY ASSESSMENT",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED primary assessment
                 # ed_cd[grepl("\\\\TMP RESPIRATORY",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED respiratory
-                ed_cd[grepl("\\\\TMP SEPSIS SCREEN",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED sepsis screen
+                # ed_cd[grepl("\\\\TMP SEPSIS SCREEN",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED sepsis screen
                 ed_cd[grepl("\\\\TMP SKIN/WOUND",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED skin/wound
                 ed_cd[grepl("\\\\TMP TABACCO USE",ed_cd$CONCEPT_PATH),]$CONCEPT_CD #ED tabacco use
                 ))
@@ -63,11 +65,9 @@ x_mt<-data_at_enc2 %>%
   dplyr::slice(1:1) %>% ## latest values
   ungroup %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,TVAL_CHAR) %>%
-  bind_rows(readRDS("./data/data_bef_enc.rda") %>%
+  bind_rows(readRDS("./data/data_bef_enc_yearly.rda") %>%
               semi_join(sample_idx$rs, by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
-              dplyr::filter(DAY_BEF_TRIAGE<=-31) %>%
-              dplyr::mutate(TVAL_CHAR=as.character(round(DAY_BEF_TRIAGE/365.25))) %>%
-              dplyr::mutate(VARIABLE=paste0(VARIABLE,"_",TVAL_CHAR,"yr"))) %>%
+              dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,TVAL_CHAR)) %>%
   unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
   #then transform
   mutate(VARIABLE=case_when(grepl("(FLO_MEAS_ID\\+hash)|(FLO_MEAS_ID\\+LINE)+",VARIABLE) ~ paste0(VARIABLE,"_",TVAL_CHAR),

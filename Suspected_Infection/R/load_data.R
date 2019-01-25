@@ -17,8 +17,8 @@ conn<-connect_to_db("Oracle","OCI",config_file)
 ##=======load cohort=========
 enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL") %>%
   filter(DT_CLASS != "U") %>% # remove people with undetermined transition time
-  filter(!(CASE_CTRL==0 & !is.na(ABX_SINCE_TRIAGE))) %>% #remove unclear nonSI cases
-  filter((SI_SINCE_TRIAGE <= coalesce(TRANS_SINCE_TRIAGE)) | is.na(SI_SINCE_TRIAGE)) #only use cases with SI discovered within ED
+  filter(!(CASE_CTRL==0 & !is.na(ABX_SINCE_TRIAGE))) %>% #remove ambiguous nonSI cases
+  filter((!is.na(TRANS_SINCE_TRIAGE) & SI_SINCE_TRIAGE <= TRANS_SINCE_TRIAGE) | is.na(SI_SINCE_TRIAGE)) #only use cases with SI discovered within ED
 
 N<-length(unique(enroll$ENCOUNTER_NUM))
 P<-sum(enroll$CASE_CTRL)

@@ -19,11 +19,13 @@ x_mt<-Xy_sparse$x_mt
 y_mt<-Xy_sparse$y_mt
 
 ##======================== partition ============================================
-dtrain<-xgb.DMatrix(data=x_mt[which(y_mt$part73=="T"),],
-                    label=y_mt[which(y_mt$part73=="T"),]$CASE_CTRL)
+sample_idx<-readRDS("./data/sample_idx.rda")
 
-dtest<-xgb.DMatrix(data=x_mt[which(y_mt$part73=="V"),],
-                   label=y_mt[which(y_mt$part73=="V"),]$CASE_CTRL)
+dtrain<-xgb.DMatrix(data=x_mt[which(sample_idx$rs$rs_part73=="T"),],
+                    label=y_mt[which(sample_idx$rs$rs_part73=="T"),]$CASE_CTRL)
+
+dtest<-xgb.DMatrix(data=x_mt[which(sample_idx$rs$rs_part73=="V"),],
+                   label=y_mt[which(sample_idx$rs$rs_part73=="V"),]$CASE_CTRL)
 
 ##======================== tune ============================================
 start_k_i<-Sys.time()

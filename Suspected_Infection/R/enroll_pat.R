@@ -61,6 +61,7 @@ consort<-execute_single_sql(conn,
                             statement=sql$statement,
                             write=(sql$action=="write"),
                             table_name=toupper(sql$tbl_out))
+saveRDS(consort,file="./data/consort.rda")
 
 ##---collect patient level info
 sql<-parse_sql(paste0("./inst/collect_pat_fact.sql"),
