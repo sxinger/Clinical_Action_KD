@@ -237,7 +237,9 @@ feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
 pat_at_enc2<-pat_at_enc %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,AGE,SEX_MALE) %>%
+  mutate(SEX_MALE=ifelse(SEX_MALE==0,NA,SEX_MALE)) %>%
   gather(VARIABLE,NVAL_NUM,-ENCOUNTER_NUM,-PATIENT_NUM) %>%
+  filter(!is.na(NVAL_NUM)) %>%
   mutate(TVAL_CHAR=NA,
          START_SINCE_TRIAGE=0) %>%
   bind_rows(pat_at_enc %>%
@@ -272,7 +274,7 @@ feat_at_enc2 %<>%
               dplyr::mutate(odds_ratio_emp_low=exp(log(odds_ratio_emp)-1.96*log_odds_ratio_sd),
                             odds_ratio_emp_low=exp(log(odds_ratio_emp)+1.96*log_odds_ratio_sd)) %>%
               dplyr::rename(CONCEPT_CD=TVAL_CHAR) %>%
-              dplyr::mutate(NAME_CHAR=CONCEPT_CD,
+              dplyr::mutate(NAME_CHAR=ifelse(is.na(CONCEPT_CD),VARIABLE,CONCEPT_CD),
                             CONCEPT_PATH="patient_dimension"))
 #-------------------------------------------------------------------------------------------------------------
 

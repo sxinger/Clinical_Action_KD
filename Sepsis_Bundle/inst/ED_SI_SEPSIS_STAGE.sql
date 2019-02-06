@@ -108,8 +108,11 @@ select distinct
       ,hypot2.hypot2_since_trigger
       ,pressor.start_since_triage pressor_since_triage
       ,resus.start_since_triage resus_since_triage
+      ,si.acu_since_triage
+      ,si.dest_since_triage
       ,si.trans_since_triage
       ,si.end_since_triage
+      ,si.dt_class
       ,case when coalesce(sirs.SIRS_2_since_triage,sirs.SIRS_3_since_triage,sirs.SIRS_4_since_triage) is not null and 
                  coalesce(od.OD_1_since_triage,od.OD_2_since_triage,od.OD_3_since_triage,od.OD_4_since_triage,od.OD_5_since_triage,od.OD_6_since_triage,od.OD_7_since_triage) is not null then 1 
        else 0 end as sepsis_ind

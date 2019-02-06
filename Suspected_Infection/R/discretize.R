@@ -13,14 +13,13 @@ require_libraries(c("Matrix",
 
 
 ##==============load data==============
-data_at_enc<-readRDS("./data/data_at_enc.rda")
 enroll<-readRDS("./data/SI_enroll.rda")
 
 ##=============pick out numerical variables=============
 num_var<-readRDS("./data/feat_at_enc.rda") %>%
   filter(!is.na(q_1))
 
-data_at_enc_discrt<-data_at_enc %>%
+data_at_enc_discrt<-readRDS("./data/data_at_enc.rda") %>%
   semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   inner_join(num_var %>% dplyr::select(VARIABLE,q_5,q_10,q_15),
              by="VARIABLE") 
@@ -30,33 +29,48 @@ data_at_enc_discrt1<-data_at_enc_discrt %>%
   dplyr::mutate(NVAL_NUM2=case_when(NVAL_NUM < q_5 ~ "low",
                                     NVAL_NUM >= q_5 & NVAL_NUM < q_10 ~ "mid_low",
                                     NVAL_NUM >= q_10 & NVAL_NUM < q_15 ~ "mid_high",
-                                    NVAL_NUM > q_15 ~ "high",
-                                    TRUE ~ "miss")) %>%
+                                    NVAL_NUM > q_15 ~ "high")) %>%
   ungroup %>%
+  filter(!is.na(NVAL_NUM2)) %>%
   mutate(VARIABLE2=VARIABLE) %>%
   unite("TVAL_CHAR",c("VARIABLE2","NVAL_NUM2"),sep="_") %>%
   dplyr::mutate(VARIABLE=paste0("num_",VARIABLE)) %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
-data_at_enc_discrt2<-data_at_enc_discrt %>%
-  dplyr::mutate(TVAL_CHAR=paste0(VARIABLE,"_bin"),
-                VARIABLE=paste0("num_",VARIABLE),
-                NVAL_NUM=1) %>%
-  group_by(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,TVAL_CHAR) %>%
-  top_n(n=1L,wt=-START_SINCE_TRIAGE) %>%
-  ungroup %>% unique %>%
-  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
-data_at_enc %<>%
-  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
-  anti_join(num_var,by="VARIABLE") %>%
-  bind_rows(data_at_enc_discrt1) %>%
+chunk_n<-100
+pat_chunk<-enroll %>% 
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
+  mutate(chunk=sample(1:chunk_n,n(),replace=T),
+         k=1)
+
+num_var_miss<-num_var %>%
+  dplyr::select(VARIABLE) %>% unique %>%
+  dplyr::mutate(TVAL_CHAR=paste0(VARIABLE,"_miss"),
+                VARIABLE=paste0("num_",VARIABLE),
+                k=1)
+
+data_at_enc_discrt2<-c()
+for(i in 1:chunk_n){
+  data_at_enc_discrt2 %<>%
+    bind_rows(pat_chunk %>%
+                filter(chunk=i) %>%
+                inner_join(num_var_miss,by="k")%>%
+                anti_join(data_at_enc_discrt1,by=c("PATIENT_NUM","ENCOUNTER_NUM","VARIABLE")) %>%
+                dplyr::mutate(NVAL_NUM = 1))
+}
+
+data_at_enc_discrt<-data_at_enc_discrt1 %>%
   bind_rows(data_at_enc_discrt2)
+
+rm(data_at_enc_discrt1,data_at_enc_discrt2)
+gc()
+
 
 #-----------augment feature dictionary with the discretized features-----------
 N<-nrow(enroll)
 P<-sum(enroll$CASE_CTRL)
-feat_enc_dscrt<-data_at_enc_discrt1 %>%
+feat_enc_dscrt<-data_at_enc_discrt %>%
   left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
             by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
   group_by(VARIABLE,TVAL_CHAR) %>%
@@ -84,8 +98,6 @@ feat_at_enc<-readRDS("./data/feat_at_enc.rda") %>%
 
 #--------------------------------------------------------------------------------------
 
-rm(data_at_enc_discrt1,data_at_enc_discrt2); 
-gc()
 
 #======attach discretized age==========
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
@@ -103,9 +115,11 @@ age_discrt<-pat_at_enc %>%
   unite("VARIABLE",c("VARIABLE","TVAL_CHAR2")) %>%
   mutate(NVAL_NUM=1,START_SINCE_TRIAGE=0)
 
-data_at_enc %<>% 
+data_at_enc %<>%
   filter(VARIABLE!="AGE") %>%
-  filter(!(VARIABLE=="SEX_MALE"&NVAL_NUM==0)) %>%
+  filter(!(VARIABLE=="SEX_MALE"&NVAL_NUM==0))
+
+data_at_enc_discrt %<>%
   bind_rows(age_discrt)
 
 #------------augment feature dictionary with the discretized features-------------
@@ -135,12 +149,13 @@ feat_enc_dscrt<-age_discrt %>%
 
 feat_at_enc %<>%
   bind_rows(feat_enc_dscrt)
-
-saveRDS(feat_at_enc,file="./data/feat_at_enc_aug.rda")
 #----------------------------------------------------------------------------------
 
+
 #========save data============
-saveRDS(data_at_enc,file="./data/data_at_enc_discrt.rda")
+saveRDS(feat_at_enc,file="./data/feat_at_enc_aug.rda")
+saveRDS(data_at_enc,file="./data/data_at_enc2.rda")
+saveRDS(data_at_enc_discrt,file="./data/data_at_enc_discrt2.rda")
 
 
   

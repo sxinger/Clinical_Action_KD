@@ -1,4 +1,4 @@
-#### predict SI: latest value abstraction, gbm ####
+#### predict SI: latest value abstraction, glm ####
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
@@ -85,9 +85,7 @@ valid<-data.frame(ENCOUNTER_NUM = row.names(test_mt),
                   stringsAsFactors = F)
 
 ##============================= variable importance
-feat_dict<-readRDS("./data/feat_at_enc_aug.rda") %>%
-  bind_rows(readRDS("./data/feat_bef_enc.rda")) %>%
-  dplyr::select(VARIABLE,CONCEPT_CD,NAME_CHAR,CONCEPT_PATH,enc_wi,odds_ratio_emp)
+feat_dict<-readRDS("./data/feat_uni_aug.rda")
 
 var_imp<-h2o.varimp(alpha_opt_model) %>%
   left_join(col_encode,by=c("names"="col_code")) %>%
@@ -98,18 +96,26 @@ var_imp<-h2o.varimp(alpha_opt_model) %>%
   left_join(feat_dict,by=c("Feature"="VARIABLE"))
 
 var_imp2<-var_imp %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
+  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)&!grepl("\\_(\\-)?[0-9]+yr$",Feature)) %>%
+              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp,-log_odds_ratio_sd,-uni_p_val) %>%
               left_join(feat_dict %>% dplyr::select(-VARIABLE),
-                        by=c("Feature"="CONCEPT_CD")))
+                        by=c("Feature"="CONCEPT_CD"))) %>%
+  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)&grepl("\\_(\\-)?[0-9]+yr$",Feature)) %>%
+              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp,-log_odds_ratio_sd,-uni_p_val) %>%
+              dplyr::mutate(Feature2=gsub("\\_(\\-)?[0-9]+yr$","",Feature)) %>%
+              left_join(feat_dict %>% dplyr::select(-CONCEPT_CD),
+                        by=c("Feature2"="VARIABLE")) %>%
+              dplyr::select(-Feature2))
 
 var_imp2 %<>%
   dplyr::select(-CONCEPT_CD) %>%
+  # filter(!is.na(NAME_CHAR)) %>%
   group_by(Feature) %>%
   arrange(rank) %>%
   dplyr::slice(1:1) %>%
   ungroup %>%
-  arrange(rank)
+  arrange(rank) %>%
+  dplyr::mutate(uni_p_val=round(uni_p_val,6))
 
 ##=============================finalize results==================================
 # save results
@@ -118,10 +124,10 @@ glm_out<-list(valid_out=rbind(valid_cv,valid),
               var_imp=var_imp2,
               hyper_param=alpha_opt)
 
-pROC::auc(valid$real,valid$pred) #0.9205
-pROC::ci.auc(valid$real,valid$pred) #95% CI: 0.9161-0.9248 (DeLong)
+pROC::auc(valid$real,valid$pred) #0.9086
+pROC::ci.auc(valid$real,valid$pred) #95% CI: 0.9036-0.9136 (DeLong)
 
-k<-nrow(var_imp) #1129
+k<-nrow(var_imp) #968
 saveRDS(glm_out,file=paste0("./output/glm1_rec_fs",k,".rda"))
 
 
@@ -130,9 +136,10 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-k<-1129
+k<-968
 glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
 var_imp<-glm_out$var_imp
 valid<-glm_out$valid_out %>% filter(valid_type=="V")
 pROC::ci.auc(valid$real,valid$pred)
-# 95% CI: 0.8451-0.8519 (DeLong)
+
+

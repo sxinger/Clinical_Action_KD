@@ -53,7 +53,7 @@ select distinct
       ,cl.end_since_triage
       ,row_number() over (partition by cl.patient_num, cl.encounter_num order by cl.start_since_triage) rn
 from collect_pressor cl
-join PRESSOR_CD ht on ('KUH|MEDICATION_ID:'||v.MED_ID) = cl.code
+join PRESSOR_CD ht on ('KUH|MEDICATION_ID:'||ht.MED_ID) = cl.code
 
 
 

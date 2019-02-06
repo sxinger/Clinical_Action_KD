@@ -1,4 +1,5 @@
-#### predict SI: latest value abstraction, gbm ####
+#### predict SI: latest value abstraction, glm ####
+#### minimal set ####
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
 
@@ -13,34 +14,47 @@ require_libraries(c("Matrix",
                   ))
 
 ##==============load data=================
+sample_idx<-readRDS("./data/sample_idx.rda")
 Xy_sparse<-readRDS("./data/Xy_sp_rec.rda")
 x_mt<-Xy_sparse$x_mt
 y_mt<-Xy_sparse$y_mt
 
+
 ##==============minimal set exploration=============
 #select variables
-glm_out<-readRDS("./output/glm1_rec_fs1242.rda")
-var_imp<-glm_out$var_imp
+k<-968
+glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
+var_imp<-glm_out$var_imp %>%
+  filter(!(Feature %in% c("KUH|FLO_MEAS_ID:301250_mid_low",
+                          "KUH|FLO_MEAS_ID:301250_low"))) %>%
+  filter(!grepl("(\\_miss)+",Feature)) %>%
+  dplyr::mutate(rank=1:n())
+
+# write.csv(var_imp,file=paste0("./output/glm1_rec_fs",k,".csv"),
+#           row.names=F)
+
 P<-nrow(var_imp)
-# k<-10 #0.7954, 95% CI: 0.7915-0.7994 (DeLong)
-# k<-20 #0.8118, 95% CI: 0.808-0.8157 (DeLong)
-# k<-50 #0.8306, 95% CI: 0.827-0.8343 (DeLong)
-# k<-100 #0.8394, 95% CI: 0.8358-0.8429 (DeLong)
-k<-150 #0.8427, 95% CI: 0.8392-0.8462 (DeLong)
-# k<-200 #0.8444, 95% CI: 0.841-0.8479 (DeLong)
-
-
+# k<-10
+# k<-20
+# k<-30
+# k<-40
+# k<-50
+# k<-60
+# k<-80
+k<-120
+# k<-160
+# k<-240
 
 demo<-c("AGE_GRP","SEX_MALE")  
 var_lst<-c(which(grepl(paste0("(",paste(demo,collapse=")|("),")"),colnames(x_mt))),
            which(colnames(x_mt) %in% var_imp$Feature[seq_len(k)]))
 
 #traing and testing sets
-train_mt<-cbind(x_mt[which(y_mt$part73=="T"),var_lst],
-                label=y_mt[which(y_mt$part73=="T"),]$CASE_CTRL)
+train_mt<-cbind(x_mt[which(sample_idx$rs$rs_part73=="T"),var_lst],
+                label=y_mt[which(sample_idx$rs$rs_part73=="T"),]$CASE_CTRL)
 
-test_mt<-cbind(x_mt[which(y_mt$part73=="V"),var_lst],
-               label=y_mt[which(y_mt$part73=="V"),]$CASE_CTRL)
+test_mt<-cbind(x_mt[which(sample_idx$rs$rs_part73=="V"),var_lst],
+               label=y_mt[which(sample_idx$rs$rs_part73=="V"),]$CASE_CTRL)
 
 pred_idx<-which(!colnames(train_mt) %in% c("label"))
 target_idx<-which(colnames(train_mt)=="label")
@@ -86,8 +100,7 @@ valid<-data.frame(ENCOUNTER_NUM = row.names(test_mt),
                   stringsAsFactors = F)
 
 ##============================= variable importance =================================
-feat_dict<-readRDS("./data/feat_at_enc.rda") %>%
-  dplyr::select(VARIABLE,CONCEPT_CD,NAME_CHAR,CONCEPT_PATH,enc_wi,odds_ratio_emp)
+feat_dict<-readRDS("./data/feat_uni_aug.rda")
 
 var_imp<-h2o.varimp(fit_glm) %>%
   left_join(col_encode,by=c("names"="col_code")) %>%
@@ -98,23 +111,13 @@ var_imp<-h2o.varimp(fit_glm) %>%
   left_join(feat_dict,by=c("Feature"="VARIABLE"))
 
 var_imp2<-var_imp %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
+  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)&!grepl("\\_(\\-)?[0-9]+yr$",Feature)) %>%
+              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp,-log_odds_ratio_sd,-uni_p_val) %>%
               left_join(feat_dict %>% dplyr::select(-VARIABLE),
-                        by=c("Feature"="CONCEPT_CD")))
-
-var_imp2<-var_imp2 %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp2 %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
-              mutate(Feature2=gsub("_[^\\_]+$","",Feature)) %>%
-              left_join(feat_dict %>% dplyr::select(-CONCEPT_CD),
-                        by=c("Feature2"="VARIABLE")) %>%
-              dplyr::select(-Feature2))
-
-var_imp2<-var_imp2 %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(var_imp2 %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp) %>%
-              mutate(Feature2=gsub("_[^\\_]+$","",gsub("_[^\\_]+$","",Feature))) %>%
+                        by=c("Feature"="CONCEPT_CD"))) %>%
+  bind_rows(var_imp %>% filter(is.na(NAME_CHAR)&grepl("\\_(\\-)?[0-9]+yr$",Feature)) %>%
+              dplyr::select(-NAME_CHAR,-CONCEPT_PATH,-enc_wi,-odds_ratio_emp,-log_odds_ratio_sd,-uni_p_val) %>%
+              dplyr::mutate(Feature2=gsub("\\_(\\-)?[0-9]+yr$","",Feature)) %>%
               left_join(feat_dict %>% dplyr::select(-CONCEPT_CD),
                         by=c("Feature2"="VARIABLE")) %>%
               dplyr::select(-Feature2))
@@ -122,10 +125,11 @@ var_imp2<-var_imp2 %>% filter(!is.na(NAME_CHAR)) %>%
 var_imp2 %<>%
   dplyr::select(-CONCEPT_CD) %>%
   group_by(Feature) %>%
-  arrange(rank) %>%
+  arrange(rank,uni_p_val) %>%
   dplyr::slice(1:1) %>%
   ungroup %>%
-  arrange(rank)
+  arrange(rank) %>%
+  dplyr::mutate(uni_p_val=round(uni_p_val,6))
 
 ##=============================finalize results==================================
 #check performace before saving the results
@@ -133,17 +137,14 @@ pROC::auc(valid$real,valid$pred)
 pROC::ci.auc(valid$real,valid$pred)
 
 # save results
-var_imp2 %<>%
-  mutate(Feature=ifelse(grepl("((\\_low)|(\\_high)|(\\_miss))+",Feature),Feature,
-                        paste0(Feature,"_","bin")))
 glm_out<-list(valid_out=rbind(valid_cv,valid),
               model=fit_glm,
               var_imp=var_imp2,
               hyper_param=glm_out$hyper_param)
 
 k<-nrow(var_imp2)
-saveRDS(glm_out,file=paste0("./output/glm1_rec_fs",k,".rda"))
-write.csv(var_imp2,file=paste0("./output/glm1_rec_fs",k,".csv"),
+saveRDS(glm_out,file=paste0("./output/glm2_rec_fs",k,".rda"))
+write.csv(var_imp2,file=paste0("./output/glm2_rec_fs",k,".csv"),
           row.names=F)
 
 #close h2o instance

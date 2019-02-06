@@ -3,9 +3,9 @@
 2,"Suspected Infection",33724,56870
 3,"Alert-2 SIRS",16942,24216
 4,"Alert-2 SIRS, No Organ Dysfunction",3794,4221
-5,"Alert-1st Organ Dysfunction",25312,41881
+5,"Alert-1st Organ Dysfunction",25312,41880
 6,"Alert-1st Organ Dysfunction, No SIRS",7047,8929
-7,"Alert-1st Organ Dysfunction, No 2 SIRS",15130,21886
+7,"Alert-1st Organ Dysfunction, No 2 SIRS",15129,21885
 8,"Alert-1st Organ Dysfunction, 2 SIRS - Sepsis",14252,19995
 9,"OD:AC",2478,2852
 9,"OD:AC+OD:AMS",19,19
@@ -71,15 +71,15 @@
 23,"Sepsis before Diagnostic Component",1298,1347
 24,"Hypotensive-Sepsis before Diagnostic Components",916,943
 25,"NonHypotensive-Sepsis before Diagnostic Components",396,404
-26,"IV triggered - Non-Sepsis",10806,14671
+26,"IV triggered - Non-Sepsis",10805,14670
 27,"IV initiated - Non-Sepsis",9636,12787
 28,"IV completed - Non-Sepsis",7533,9402
 29,"IV triggered - Sepsis",10770,14263
 30,"IV initiated - Sepsis",10284,13472
-31,"IV completed - Sepsis",8867,11195
-32,"Sepsis before IV triggered",3440,3961
-33,"Sepsis before IV initiated",6489,8037
-34,"Sepsis before IV completed",6961,8552
+31,"IV completed - Sepsis",8866,11194
+32,"Sepsis before IV triggered",3441,3962
+33,"Sepsis before IV initiated",6490,8038
+34,"Sepsis before IV completed",6960,8551
 35,"Sepsis before Antibiotics",10145,13390
 36,"Hypotensive-Sepsis before Antibiotics",7728,9724
 37,"NonHypotensive-Sepsis before Antibiotics",3200,3666
@@ -87,6 +87,6 @@
 39,"Hypotensive-Sepsis before Therapautic Components",6716,8286
 40,"NonHypotensive-Sepsis before Therapautic Components",3200,3666
 41,"Repeat Lactate",5148,5939
-42,"Remain Hypotensive",7293,9111
-43,"Vasopressor initiated",3047,3381
+42,"Remain Hypotensive",7292,9110
+43,"Vasopressor initiated",2773,3055
 44,"Cardiac events",652,676
