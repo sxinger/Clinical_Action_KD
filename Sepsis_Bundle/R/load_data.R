@@ -18,6 +18,7 @@ conn<-connect_to_db("Oracle","OCI",config_file)
 ##=======load cohort and define targets=========
 enroll<-dbGetQuery(conn,"select * from ED_SI_SEPSIS_STAGE") %>%
   filter(DT_CLASS != 'U') %>%
+  filter(SEPSIS_IND==1 & SEPSIS_SINCE_TRIAGE<=48 & SI_SINCE_TRIAGE<=13) %>%   #all sepsis patients
   dplyr::mutate(SEPSIS_IND=as.numeric(!is.na(SIRS_2_SINCE_TRIAGE)*
                                       !is.na(OD_1_SINCE_TRIAGE)*
                                       !is.na(OD_2_SINCE_TRIAGE)*
@@ -37,16 +38,32 @@ enroll<-dbGetQuery(conn,"select * from ED_SI_SEPSIS_STAGE") %>%
                                        OD_6_SINCE_TRIAGE,
                                        OD_7_SINCE_TRIAGE,na.rm=T))) %>%
   dplyr::mutate(TRT3HR_INIT=pmin(C_SINCE_TRIAGE,
-                                   ABX_SINCE_TRIAGE,
-                                   LACTATE_SINCE_TRIAGE,
-                                   IV_COMPLT_SINCE_TRIAGE,na.rm=T),
-                TRT3HR_COMPLT=pmax(C_SINCE_TRIAGE,
-                                   ABX_SINCE_TRIAGE,
-                                   LACTATE_SINCE_TRIAGE,
-                                   IV_COMPLT_SINCE_TRIAGE))
-  
-N<-length(unique(enroll$ENCOUNTER_NUM))
-P<-sum(enroll$SEPSIS_IND)
+                                 ABX_SINCE_TRIAGE,
+                                 LACTATE_SINCE_TRIAGE,
+                                 IV_COMPLT_SINCE_TRIAGE,na.rm=T),
+                TRT3HR_COMPLT=ifelse(!is.na(IV_TRIGGER_SINCE_TRIAGE),
+                                     pmax(C_SINCE_TRIAGE,
+                                          ABX_SINCE_TRIAGE,
+                                          LACTATE_SINCE_TRIAGE,
+                                          IV_COMPLT_SINCE_TRIAGE),
+                                     pmax(C_SINCE_TRIAGE,
+                                          ABX_SINCE_TRIAGE,
+                                          LACTATE_SINCE_TRIAGE))) %>%
+  dplyr::mutate(TRT3HR_COMPLT_IND=as.numeric(!is.na(TRT3HR_COMPLT)),
+                TRT3HR_COMPLT_FAST_IND=case_when(((!is.na(IV_TRIGGER_SINCE_TRIAGE)&(IV_2_SINCE_TRIAGE-IV_0_SINCE_TRIAGE)<=2)|
+                                                  (is.na(IV_TRIGGER_SINCE_TRIAGE)&!is.na(TRT3HR_COMPLT)))&
+                                                  ABX_SINCE_TRIAGE <= 3~ 1,
+                                                 TRUE ~ 0))
+
+N<-length(unique(enroll$ENCOUNTER_NUM)) #12,754
+enroll %>%
+  group_by(!is.na(IV_TRIGGER_SINCE_TRIAGE),TRT3HR_COMPLT_IND) %>%
+  dplyr::summarize(pat_cnt=n()) %>% ungroup
+
+enroll %>%
+  group_by(!is.na(IV_TRIGGER_SINCE_TRIAGE),TRT3HR_COMPLT_FAST_IND) %>%
+  dplyr::summarize(pat_cnt=n()) %>% ungroup
+
 saveRDS(enroll,file="./data/SI_enroll.rda")
 
 
@@ -72,7 +89,7 @@ saveRDS(data_bef_enc,file="./data/data_bef_enc.rda")
 
 
 
-##===========cut out Sepsis cohort for Lakmal============##
+##===========cut out Sepsis cohort for Lakmal============
 #--UHC Diagnosis assigned: UHC|CCSICD9DIAG:2
 #--Specific types of antibiotics were administered within 24 hours since triage start
 #established connection (run line 14,15)

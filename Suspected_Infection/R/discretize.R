@@ -41,8 +41,8 @@ data_at_enc_discrt1<-data_at_enc_discrt %>%
 chunk_n<-100
 pat_chunk<-enroll %>% 
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
-  mutate(chunk=sample(1:chunk_n,n(),replace=T),
-         k=1)
+  dplyr::mutate(chunk=sample(1:chunk_n,n(),replace=T),
+                k=1)
 
 num_var_miss<-num_var %>%
   dplyr::select(VARIABLE) %>% unique %>%
@@ -54,10 +54,12 @@ data_at_enc_discrt2<-c()
 for(i in 1:chunk_n){
   data_at_enc_discrt2 %<>%
     bind_rows(pat_chunk %>%
-                filter(chunk=i) %>%
-                inner_join(num_var_miss,by="k")%>%
+                filter(chunk==i) %>%
+                full_join(num_var_miss,by="k")%>%
                 anti_join(data_at_enc_discrt1,by=c("PATIENT_NUM","ENCOUNTER_NUM","VARIABLE")) %>%
                 dplyr::mutate(NVAL_NUM = 1))
+  
+  cat("finish chunk",i,".\n")
 }
 
 data_at_enc_discrt<-data_at_enc_discrt1 %>%

@@ -11,7 +11,7 @@ require_libraries(c("Matrix",
                     "stringr"                   
                   ))
 
-## load patient data and attach demographic info
+## load patient data and attach demographic info used for stratified sampling
 enroll<-readRDS("./data/SI_enroll.rda") %>%
   left_join(readRDS("./data/pat_at_enc.rda") %>%
               dplyr::mutate(AGE_GRP=case_when(AGE<30 ~ "20s and below",
@@ -28,6 +28,7 @@ enroll<-readRDS("./data/SI_enroll.rda") %>%
               dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,
                             AGE_GRP,SEX_MALE,RACE),
             by=c("PATIENT_NUM","ENCOUNTER_NUM"))
+
 
 ## random sampling
 rsample_idx<-enroll %>%
