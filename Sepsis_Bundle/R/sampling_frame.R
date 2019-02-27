@@ -43,7 +43,8 @@ enroll %<>%
 ## down sampling - outcome
 ns<-20
 dsample_idx<-c()
-enroll0<- enroll %>% filter(CASE_CTRL==0) %>% 
+enroll0<- enroll %>% 
+  filter(CASE_CTRL==0) %>% 
   dplyr::select(PATIENT_NUM, ENCOUNTER_NUM) %>%
   dplyr::mutate(ds_cv20=sample(1:ns,n(),replace=T))
 

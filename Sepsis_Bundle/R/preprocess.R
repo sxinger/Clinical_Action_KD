@@ -15,7 +15,8 @@ require_libraries(c("Matrix",
                     "tidyr",
                     "plyr",
                     "magrittr", 
-                    "stringr"))
+                    "stringr",
+                    "fuzzyjoin"))
 
 ## Load in fact_stack and pat_tbl
 enroll<-readRDS("./data/SI_enroll.rda")
@@ -64,159 +65,143 @@ rm(data_at_enc); gc()
 
 
 ##=====feature engineering============
+#---SIRS and OD events
 data_at_enc_eng<-enroll %>%
-  dplyr::select("PATIENT_NUM",
+  dplyr::select("PATIENT_NUM","ENCOUNTER_NUM",
                 paste0("SIRS_",1:4,"_SINCE_TRIAGE"),
                 paste0("OD_",1:4,"_SINCE_TRIAGE")) %>%
-  gather(VARIABLE,START_SINCE_TRIAGE,-PATIENT_NUM) %>%
+  gather(TVAL_CHAR,START_SINCE_TRIAGE,-ENCOUNTER_NUM,-PATIENT_NUM) %>%
   filter(!is.na(START_SINCE_TRIAGE)) %>%
-  dplyr::mutate(VARIABLE=gsub("_SINCE_TRIAGE","",VARIABLE)) %>%
-  left_join(enroll %>%
-              dplyr::select("PATIENT_NUM",
-                            paste0("OD_",1:4,"_TVAL")) %>%
-              gather(VARIABLE,TVAL_CHAR,-PATIENT_NUM) %>%
-              filter(!is.na(TVAL_CHAR)) %>%
-              dplyr::mutate(VARIABLE=gsub("_TVAL","",VARIABLE)),
-            by=c("PATIENT_NUM","VARIABLE")) %>%
-  dplyr::mutate(VARIABLE=case_when(!is.na(TVAL_CHAR) ~ TVAL_CHAR,
-                                   TRUE ~VARIABLE),
-                NVAL_NUM=1) %>%
-  dplyr::select(PATIENT_NUM,VARIABLE,NVAL_NUM,START_SINCE_TRIAGE) %>%
-  
+  dplyr::mutate(TVAL_CHAR=gsub("_SINCE_TRIAGE","",TVAL_CHAR),
+                VARIABLE=gsub("_.*","",TVAL_CHAR),
+                NVAL_NUM=1)
+
+#---Charlson Comorbidity Index
+cci_icd<-read.csv("./src/charlson_ICD.csv",stringsAsFactors = F) %>%
+  dplyr::mutate(DX_CODE=paste0("\\\\",DX_CODE))
+
+feat_cd<-readRDS("../Suspected_Infection/data/feat_at_enc.rda") %>%
+  dplyr::select(CONCEPT_CD,NAME_CHAR,CONCEPT_PATH) %>%
+  dplyr::filter(grepl("(\\\\ICD(9|10))+",CONCEPT_PATH)) %>%
+  fuzzy_inner_join(cci_icd,by=c("CONCEPT_PATH"="DX_CODE"),match_fun=str_detect) %>%
+  dplyr::select(CONCEPT_CD,NAME_CHAR,DX,WEIGHT) %>% unique
+
+data_bef_enc_cci<-data_bef_enc %>% 
+  inner_join(feat_cd %>% dplyr::select(CONCEPT_CD,DX,WEIGHT),by=c("VARIABLE"="CONCEPT_CD")) %>%
+  group_by(PATIENT_NUM,ENCOUNTER_NUM,DX) %>%
+  arrange(abs(DAY_BEF_TRIAGE)) %>%
+  slice(1:1) %>%
+  ungroup
 
 
-
-##======temporal filter===============
-
-
+##======temporal filter (at encounter)===============
+#---filter by time
+data_at_enc2 %<>% 
+  bind_rows(data_at_enc_eng) %>%
+  bind_rows(data_bef_enc_cci %>%
+              group_by(PATIENT_NUM,ENCOUNTER_NUM) %>%
+              dplyr::summarize(NVAL_NUM=sum(WEIGHT)) %>%
+              ungroup %>%
+              dplyr::mutate(VARIABLE="CCI",START_SINCE_TRIAGE=-1) %>%
+              dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,START_SINCE_TRIAGE)) %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE) %>%
+  left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,ABX_SINCE_TRIAGE,IV_0_SINCE_TRIAGE),
+            by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+  dplyr::filter(START_SINCE_TRIAGE<=pmin(IV_0_SINCE_TRIAGE,ABX_SINCE_TRIAGE)) # before any intervention
 
 
 ##======feature abstraction===========
-
-
-
-## pre-filter: use facts before treatment completion1/sepsis onset
-presel_num %<>%
-  left_join(trt3hr %>% 
-              dplyr::select(ENCOUNTER_NUM,TRT3HR_END1,SEPSIS_SINCE_TRIAGE),
-            by="ENCOUNTER_NUM") %>%
-  mutate(pred_point = ifelse(is.na(TRT3HR_END1),SEPSIS_SINCE_TRIAGE,TRT3HR_END1)) %>%
-  filter(START_SINCE_TRIAGE <= pred_point) %>%
-  dplyr::filter(grepl("_inc",VARIABLE) | ((!grepl("_inc",VARIABLE) & NVAL > 0))) #remove suspecious 0
-
-
-presel_cat %<>%
-  left_join(trt3hr %>% 
-              dplyr::select(ENCOUNTER_NUM,TRT3HR_END1,SEPSIS_SINCE_TRIAGE),
-            by="ENCOUNTER_NUM") %>%
-  mutate(pred_point = ifelse(is.na(TRT3HR_END1),SEPSIS_SINCE_TRIAGE,TRT3HR_END1)) %>%
-  filter(START_SINCE_TRIAGE <= pred_point)
-
-
-## process numerical variables
-# set aside time-invariant variables
-presel_num2_invar<-presel_num %>%
-  group_by(ENCOUNTER_NUM,VARIABLE) %>%
-  dplyr::mutate(pt_freq=length(unique(START_SINCE_TRIAGE))) %>%
-  ungroup %>% group_by(VARIABLE) %>%
-  dplyr::summarize(avg_pt_freq = mean(pt_freq,na.rm=T),
-                   sd_pt_freq = sd(pt_freq,na.rm=T)) %>%
+#---set aside time-invariant variables
+data_num_inv<-data_at_enc2 %>%
+  group_by(VARIABLE) %>%
+  dplyr::mutate(distinct_val=length(unique(NVAL_NUM))) %>%
   ungroup %>%
-  mutate(invar_ind = ifelse(avg_pt_freq==1 & sd_pt_freq==0,1,0))
+  group_by(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,distinct_val) %>%
+  dplyr::mutate(pt_freq=length(unique(START_SINCE_TRIAGE))) %>%
+  ungroup %>% group_by(VARIABLE,distinct_val) %>%
+  dplyr::summarize(avg_pt_freq = mean(pt_freq,na.rm=T),
+                   sd_pt_freq = sd(pt_freq,na.rm=T),
+                   median_pt_freq = median(pt_freq,na.rm=T),
+                   q3_pt_freq=quantile(pt_freq,probs=0.75,na.rm=T)) %>%
+  ungroup %>%
+  mutate(invar_ind = ifelse(q3_pt_freq<=1|distinct_val==1,1,0))
 
-
-# aggregate values within time-window t (if multiple values present)
-presel_num2_var<-presel_num %>%
-  semi_join(presel_num2_invar %>% filter(invar_ind == 0),by="VARIABLE") %>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE, NVAL,START_SINCE_TRIAGE) %>%
-  unique %>% group_by(ENCOUNTER_NUM, VARIABLE) %>%
+#---aggregate values within time-window t (if multiple values present)
+data_num_agg<-data_at_enc2 %>%
+  semi_join(data_num_inv %>% filter(invar_ind == 0),by="VARIABLE") %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE, NVAL_NUM,START_SINCE_TRIAGE) %>%
+  unique %>% group_by(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE) %>%
   arrange(START_SINCE_TRIAGE) %>%
   do(mutate(.
-            ,agg_min = ifelse(length(NVAL)==0, NA, min(NVAL,na.rm=T))
-            ,agg_max = ifelse(length(NVAL)==0, NA, max(NVAL,na.rm=T))
-            ,agg_mean = ifelse(length(NVAL)==0, NA, mean(NVAL,na.rm=T))
-            # ,agg_sd = ifelse(length(NVAL) <= 1, 0, sd(NVAL,na.rm=T))
-            ,agg_initial = NVAL[1]
+            ,agg_min = ifelse(length(NVAL_NUM)==0, NA, min(NVAL_NUM,na.rm=T))
+            ,agg_max = ifelse(length(NVAL_NUM)==0, NA, max(NVAL_NUM,na.rm=T))
+            ,agg_mean = ifelse(length(NVAL_NUM)==0, NA, mean(NVAL_NUM,na.rm=T))
+            # ,agg_sd = ifelse(length(NVAL_NUM) <= 1, 0, sd(NVAL_NUM,na.rm=T))
+            ,agg_initial = NVAL_NUM[1]
             # ,init_t = START_SINCE_TRIAGE[1]
-            )) %>%
+  )) %>%
   # mutate(min_t = ifelse(NVAL==agg_min,START_SINCE_TRIAGE,NA),
   #        max_t = ifelse(NVAL==agg_max,START_SINCE_TRIAGE,NA)) %>%
-  arrange(ENCOUNTER_NUM) %>% ungroup
-
-
-# collect time-invariant variables
-presel_num2_fix<-presel_num %>%
-  semi_join(presel_num2_invar %>% filter(invar_ind == 1),by="VARIABLE") %>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE, NVAL,START_SINCE_TRIAGE) %>%
-  mutate(abs_hr = abs(START_SINCE_TRIAGE)) %>%
-  group_by(ENCOUNTER_NUM, VARIABLE) %>%
-  top_n(n=-1,wt=abs_hr) %>% ungroup %>%
-  dplyr::rename(VARIABLE_agg = VARIABLE) %>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE_agg, NVAL) %>%
-  unique %>% arrange(ENCOUNTER_NUM)
-
-
-# merge variable with aggregate function
-presel_num2_var %<>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE
-               ,agg_min, agg_max, agg_mean, agg_initial
-               # ,agg_sd
-               ) %>% 
+  arrange(PATIENT_NUM,ENCOUNTER_NUM) %>% ungroup %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE
+                ,agg_min, agg_max, agg_mean, agg_initial
+                # ,agg_sd
+  ) %>% 
   unique %>%
-  gather(agg,NVAL,-ENCOUNTER_NUM,-VARIABLE) %>%
+  gather(agg,NVAL_NUM,-ENCOUNTER_NUM,-PATIENT_NUM,-VARIABLE) %>%
   unite("VARIABLE_agg",c("VARIABLE","agg")) %>%
-  filter(!is.na(NVAL))
+  filter(!is.na(NVAL_NUM))
 
-
-## collect and process categorical variables
-# aggregate values within time-window t
-presel_cat %<>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE, TVAL,START_SINCE_TRIAGE) %>%
+#---collect time-invariant variables
+data_num_fix<-data_at_enc2 %>%
+  semi_join(data_num_inv %>% filter(invar_ind == 1),by="VARIABLE") %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE, NVAL_NUM, TVAL_CHAR,START_SINCE_TRIAGE) %>%
   mutate(abs_hr = abs(START_SINCE_TRIAGE)) %>%
-  group_by(ENCOUNTER_NUM, VARIABLE) %>%
-  dplyr::mutate(distinct_state = length(unique(TVAL))) %>%
-  group_by(ENCOUNTER_NUM, VARIABLE, TVAL) %>%
-  top_n(n=-1,abs_hr) %>% ungroup %>%  #get most recent value
-  dplyr::select(ENCOUNTER_NUM, VARIABLE, distinct_state, TVAL, START_SINCE_TRIAGE) %>%
-  arrange(ENCOUNTER_NUM)
+  group_by(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE) %>%
+  top_n(n=-1,wt=abs_hr) %>% ungroup %>%
+  dplyr::mutate(VARIABLE_agg = ifelse(!is.na(TVAL_CHAR),paste0(VARIABLE,"_",TVAL_CHAR),VARIABLE)) %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM, VARIABLE_agg, NVAL_NUM) %>%
+  unique %>% arrange(PATIENT_NUM,ENCOUNTER_NUM)
 
 
-# use distinct_state as a new numerical variable
-dist_state<-presel_cat %>% 
-  group_by(ENCOUNTER_NUM, VARIABLE, distinct_state) %>%
-  top_n(n=1,wt=START_SINCE_TRIAGE) %>%
-  ungroup %>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE, distinct_state, START_SINCE_TRIAGE) %>%
-  unique %>%
-  dplyr::rename(NVAL = distinct_state) %>%
-  dplyr::mutate(VARIABLE_agg = paste0(VARIABLE,"_distincts")) %>%
-  dplyr::select(ENCOUNTER_NUM, VARIABLE_agg, NVAL) %>%
-  unique %>%
-  filter(NVAL > 1)
+#---put together
+fact_stack<-data_num_agg %>%
+  bind_rows(data_num_fix) %>%
+  bind_rows(data_bef_enc %>% 
+              filter(DAY_BEF_TRIAGE < 0) %>%
+              group_by(PATIENT_NUM, ENCOUNTER_NUM, VARIABLE) %>%
+              arrange(DAY_BEF_TRIAGE) %>% slice(1:1) %>%
+              dplyr::mutate(NVAL_NUM=1) %>%
+              dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM) %>%
+              dplyr::rename(VARIABLE_agg = VARIABLE)) %>%
+  bind_rows(data_bef_enc_cci %>%
+              dplyr::mutate(NVAL_NUM=1) %>%
+              dplyr::mutate(VARIABLE_agg=DX) %>%
+              dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE_agg,NVAL_NUM)) %>%
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM"))
 
+x_mt<- fact_stack %>%
+  unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
+  long_to_sparse_matrix(.,
+                        id="PAT_ENC",
+                        variable="VARIABLE_agg",
+                        val="NVAL_NUM",
+                        binary=F)
 
-# attach to numerical stack
-presel_num2_var %<>%
-  bind_rows(dist_state)
-  
+dim(x_mt)
+# 12084  1360
 
-# hot-encoding (use separate indicators for different categories)
-presel_cat2 <- presel_cat %>%
-  dplyr::select(-distinct_state) %>%
-  mutate(NVAL = 1) %>%
-  unite("VARIABLE_agg",c("VARIABLE","TVAL")) %>%
-  dplyr::select(ENCOUNTER_NUM,VARIABLE_agg,NVAL) %>%
-  unique
+y_mt<-enroll %>%
+  dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,TRT3HR_COMPLT_FAST_IND,IV_TRIGGER_SINCE_TRIAGE) %>%
+  semi_join(fact_stack,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+  unite("PAT_ENC",c("PATIENT_NUM","ENCOUNTER_NUM"),sep="_") %>%
+  filter(!duplicated(PAT_ENC)) %>%
+  arrange(PAT_ENC)
 
+mean(y_mt$TRT3HR_COMPLT_FAST_IND) #12%
 
-# put together
-fact_stack_ohc<-presel_num2_var %>%
-  bind_rows(presel_num2_fix) %>%
-  bind_rows(presel_cat2) %>%
-  dplyr::select(ENCOUNTER_NUM,VARIABLE_agg,NVAL) %>%
-  arrange(ENCOUNTER_NUM,VARIABLE_agg)
+all(row.names(x_mt)==y_mt$PAT_ENC) #alignment check
 
-
-## save final results
-save(fact_stack_ohc,file=paste0("./data/sepsis_presel_long_ohc.Rdata"))
+Xy_sparse<-list(x_mt=x_mt,y_mt=y_mt)
+saveRDS(Xy_sparse,"./data/Xy_sp_rec.rda")
 

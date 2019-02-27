@@ -1,0 +1,90 @@
+DX_type,DX_code,DX,DX_GROUP
+ICD9,518.83,Chronic Respiratory Failure,Chronic Respiratory Failure
+ICD10,J96.1,Chronic Respiratory Failure,Chronic Respiratory Failure
+ICD9,585,Chronic Kidney Disease,Chronic Kidney Disease
+ICD10,N18,Chronic Kidney Disease,Chronic Kidney Disease
+ICD10,K72.1,Chronic Hepatic Failure,Chronic Hepatic Failure
+ICD9,571,Alcoholic fatty liver,Chronic liver disease and cirrhosis
+ICD10,K70.0,Alcoholic fatty liver,Chronic liver disease and cirrhosis
+ICD9,571.1,Acute alcoholic hepatitis,Chronic liver disease and cirrhosis
+ICD10,K70.30,Acute alcoholic hepatitis,Chronic liver disease and cirrhosis
+ICD9,571.2,Alcoholic cirrhosis of liver,Chronic liver disease and cirrhosis
+ICD10,K70.30,Alcoholic cirrhosis of liver,Chronic liver disease and cirrhosis
+ICD9,571.3,"Alcoholic liver damage, unspecified",Chronic liver disease and cirrhosis
+ICD10,K70.9,"Alcoholic liver damage, unspecified",Chronic liver disease and cirrhosis
+ICD9,571.4,"Chronic hepatitis, unspecified",Chronic liver disease and cirrhosis
+ICD10,K70.9,"Chronic hepatitis, unspecified",Chronic liver disease and cirrhosis
+ICD9,571.41,Chronic persistent hepatitis,Chronic liver disease and cirrhosis
+ICD10,K73.0,Chronic persistent hepatitis,Chronic liver disease and cirrhosis
+ICD9,571.42,Autoimmune hepatitis,Chronic liver disease and cirrhosis
+ICD10,K75.4,Autoimmune hepatitis,Chronic liver disease and cirrhosis
+ICD9,571.49,Other chronic hepatitis,Chronic liver disease and cirrhosis
+ICD10,K73.2,Other chronic hepatitis,Chronic liver disease and cirrhosis
+ICD10,K73.8,Other chronic hepatitis,Chronic liver disease and cirrhosis
+ICD9,571.5,Cirrhosis of liver without mention of alcohol,Chronic liver disease and cirrhosis
+ICD10,K74.0,Cirrhosis of liver without mention of alcohol,Chronic liver disease and cirrhosis
+ICD10,K74.60,Cirrhosis of liver without mention of alcohol,Chronic liver disease and cirrhosis
+ICD10,K74.69,Cirrhosis of liver without mention of alcohol,Chronic liver disease and cirrhosis
+ICD9,571.6,Biliary cirrhosis,Chronic liver disease and cirrhosis
+ICD10,K74.3,Biliary cirrhosis,Chronic liver disease and cirrhosis
+ICD10,K74.4,Biliary cirrhosis,Chronic liver disease and cirrhosis
+ICD10,K74.5,Biliary cirrhosis,Chronic liver disease and cirrhosis
+ICD9,571.8,Other chronic nonalcoholic liver disease,Chronic liver disease and cirrhosis
+ICD10,K76.0,Other chronic nonalcoholic liver disease,Chronic liver disease and cirrhosis
+ICD10,K76.89,Other chronic nonalcoholic liver disease,Chronic liver disease and cirrhosis
+ICD9,571.9,Unspecified chronic liver disease without mention of alcohol,Chronic liver disease and cirrhosis
+ICD10,K74.1,Unspecified chronic liver disease without mention of alcohol,Chronic liver disease and cirrhosis
+ICD10,K76.9,Unspecified chronic liver disease without mention of alcohol,Chronic liver disease and cirrhosis
+ICD9,70.2,"Viral hepatitis B with hepatic coma, acute or unspecified, without mention of hepatitis delta",Viral Hepatitis
+ICD9,70.21,"Viral hepatitis B with hepatic coma, acute or unspecified, with hepatitis delta",Viral Hepatitis
+ICD9,70.22,Chronic viral hepatitis B with hepatic coma without hepatitis delta,Viral Hepatitis
+ICD9,70.23,Chronic viral hepatitis B with hepatic coma with hepatitis delta,Viral Hepatitis
+ICD9,70.3,"Viral hepatitis B without mention of hepatic coma, acute or unspecified, without mention of hepatitis delta",Viral Hepatitis
+ICD9,70.31,"Viral hepatitis B without mention of hepatic coma, acute or unspecified, with hepatitis delta",Viral Hepatitis
+ICD9,70.32,Chronic viral hepatitis B without mention of hepatic coma without mention of hepatitis delta,Viral Hepatitis
+ICD9,70.33,Chronic viral hepatitis B without mention of hepatic coma with hepatitis delta,Viral Hepatitis
+ICD9,70.49,Other specified viral hepatitis with hepatic coma,Viral Hepatitis
+ICD9,70.54,chronic hepatitis C without hepatic coma,Viral Hepatitis
+ICD9,70.44,Chronic hepatitis C with hepatic coma,Viral Hepatitis
+ICD9,70.59,Other specified viral hepatitis without mention of hepatic coma,Viral Hepatitis
+ICD9,70.6,Unspecified viral hepatitis with hepatic coma,Viral Hepatitis
+ICD9,70.7,Unspecified viral hepatitis C without hepatic coma,Viral Hepatitis
+ICD9,70.71,Unspecified viral hepatitis C with hepatic coma,Viral Hepatitis
+ICD9,70.9,Unspecified viral hepatitis without mention of hepatic coma,Viral Hepatitis
+ICD10,B18.0,Chronic viral hepatitis B with delta-agent,Chronic Viral Hepatitis
+ICD10,B18.1,Chronic viral hepatitis B without delta-agent,Chronic Viral Hepatitis
+ICD10,B18.2,Chronic viral hepatitis C,Chronic Viral Hepatitis
+ICD10,B18.8,Other chronic viral hepatitis,Chronic Viral Hepatitis
+ICD10,B18.9,"Chronic viral hepatitis, unspecified",Chronic Viral Hepatitis
+ICD9,290,"Senile dementia, uncomplicated",Dementia
+ICD9,290.1,Presenile dementia,Dementia
+ICD9,290.1,"Presenile dementia, uncomplicated",Dementia
+ICD9,290.11,Presenile dementia with delirium,Dementia
+ICD9,290.12,Presenile dementia with delusional features,Dementia
+ICD9,290.13,Presenile dementia with depressive features,Dementia
+ICD9,290.2,Senile dementia with delusional or depressive features,Dementia
+ICD9,290.2,Senile dementia with delusional features,Dementia
+ICD9,290.21,Senile dementia with depressive features,Dementia
+ICD9,290.3,Senile dementia with delirium convert,Dementia
+ICD9,290.4,Vascular dementia,Dementia
+ICD9,290.4,"Vascular dementia, uncomplicated",Dementia
+ICD9,290.41,"Vascular dementia, with delirium",Dementia
+ICD9,290.42,"Vascular dementia, with delusions",Dementia
+ICD9,290.43,"Vascular dementia, with depressed mood",Dementia
+ICD9,290.8,Other specified senile psychotic conditions,Dementia
+ICD9,290.9,Unspecified senile psychotic condition,Dementia
+ICD9,294.1,Dementia classified elsewhere without behavioral disturbance,Dementia
+ICD9,294.2,"Dementia, unspecified without behavioral disturbance",Dementia
+ICD9,294.21,"Dementia, unspecified, with behavioral disturbance",Dementia
+ICD9,331.19,other frontotemporal dementia,Dementia
+ICD9,331.82,dementia with lewy bodies,Dementia
+ICD10,F02.8,Dementia in other diseases classified elsewhere,Dementia
+ICD10,F02.80,Dementia in other diseases classified elsewhere without behavioral disturbance,Dementia
+ICD10,F02.81,Dementia in other diseases classified elsewhere with behavioral disturbance,Dementia
+ICD10,F01.5,Vascular dementia,Dementia
+ICD10,F01.50,Vascular dementia without behavioral disturbance,Dementia
+ICD10,F01.51,Vascular dementia with behavioral disturbance,Dementia
+ICD10,F03.90,unspecified dementia without behavioral disturbance,Dementia
+ICD10,F03.91,unspecified dementia with behavioral disturbance,Dementia
+ICD10,G31.83,Dementia with Lewy Bodies,Dementia
+ICD10,G31.09,other frontotemporal dementia,Dementia
