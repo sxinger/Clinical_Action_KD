@@ -10,5 +10,6 @@ Suspected_Infection/output/
 *config_nh.csv
 *.txt
 *.log
+*.rda
 
 

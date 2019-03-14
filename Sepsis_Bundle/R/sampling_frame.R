@@ -13,7 +13,7 @@ require_libraries(c("Matrix",
 
 ## load patient data and attach demographic info used for stratified sampling
 enroll<-readRDS("./data/SI_enroll.rda") %>%
-  left_join(readRDS("./data/pat_at_enc.rda") %>%
+  left_join(readRDS("./data/pat_at_enc.rda") %>% #NA exists
               dplyr::mutate(AGE_GRP=case_when(AGE<30 ~ "20s and below",
                                               AGE>=30 & AGE <40 ~ "30s",
                                               AGE>=40 & AGE <50 ~ "40s",
@@ -44,16 +44,20 @@ enroll %<>%
 ns<-20
 dsample_idx<-c()
 enroll0<- enroll %>% 
-  filter(CASE_CTRL==0) %>% 
-  dplyr::select(PATIENT_NUM, ENCOUNTER_NUM) %>%
-  dplyr::mutate(ds_cv20=sample(1:ns,n(),replace=T))
+  filter(TRT3HR_COMPLT_FAST_IND==0) %>% 
+  dplyr::select(PATIENT_NUM, ENCOUNTER_NUM)
+
+enroll1<-enroll %>% 
+  filter(TRT3HR_COMPLT_FAST_IND==1) %>% 
+  dplyr::select(PATIENT_NUM, ENCOUNTER_NUM)
 
 for (i in seq_len(ns)){
   dsample_idx %<>%
-    bind_rows(enroll %>% filter(CASE_CTRL==1) %>%
-                dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
+    bind_rows(enroll1 %>%
                 dplyr::mutate(ds_cv20=i)) %>%
-    bind_rows(enroll0 %>% filter(ds_cv20==i))
+    bind_rows(enroll0 %>%
+                sample_n(size=nrow(enroll1)) %>%
+                dplyr::mutate(ds_cv20=i))
 }
 
 dsample_idx %<>% 
@@ -64,7 +68,7 @@ dsample_idx %<>%
 ## exact match sampling - outcome+age+sex+race
 ms<-20
 msample_idx<-c()
-enroll0<- enroll %>% filter(CASE_CTRL==0) %>% 
+enroll0<- enroll %>% filter(TRT3HR_COMPLT_FAST_IND==0) %>% 
   group_by(AGE_GRP,SEX_MALE,RACE) %>%
   dplyr::mutate(rn=1:n()) %>% ungroup %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,AGE_GRP,SEX_MALE,RACE,rn) %>%
@@ -72,15 +76,15 @@ enroll0<- enroll %>% filter(CASE_CTRL==0) %>%
 
 for(i in 1:ms){
   msample_idx %<>%
-    bind_rows(enroll %>% filter(CASE_CTRL==1) %>%
+    bind_rows(enroll %>% filter(TRT3HR_COMPLT_FAST_IND==1) %>%
                 left_join(enroll0,by=c("AGE_GRP","SEX_MALE","RACE")) %>%
                 group_by(PATIENT_NUM,ENCOUNTER_NUM) %>%
-                dplyr::filter(rn==sample(1:max(rn,na.rm=T),1)) %>%
+                do(sample_n(.,1)) %>%
                 ungroup %>%
                 dplyr::select(PATIENT_NUM0,ENCOUNTER_NUM0) %>%
                 dplyr::rename(ENCOUNTER_NUM=ENCOUNTER_NUM0,PATIENT_NUM=PATIENT_NUM0) %>%
                 dplyr::mutate(ms_cv20=i)) %>%
-    bind_rows(enroll %>% filter(CASE_CTRL==1) %>%
+    bind_rows(enroll %>% filter(TRT3HR_COMPLT_FAST_IND==1) %>%
                 dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
                 dplyr::mutate(ms_cv20=i))
 }

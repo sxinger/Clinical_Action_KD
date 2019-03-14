@@ -48,7 +48,7 @@ statements<-paste0(
     "ED_SI_PAO2",
     "ED_SI_PAFIO2",
     "ED_SI_LACTATE",
-    "ED_SI_OD",   #critical event
+    "ED_SI_OD",          #critical event
     "ED_SI_3HR_screen",
     "ED_SI_3HR_ABX",
     "ED_SI_3HR_IV", 

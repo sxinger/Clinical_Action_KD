@@ -136,7 +136,7 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-k<-968
+k<-1069
 glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
 var_imp<-glm_out$var_imp
 valid<-glm_out$valid_out %>% filter(valid_type=="V")

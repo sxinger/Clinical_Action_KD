@@ -8,7 +8,6 @@
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Sepsis_Bundle")
 
-#### Preprocessing ####
 source("./R/util.R")
 require_libraries(c("Matrix",
                     "dplyr",
@@ -24,14 +23,17 @@ data_at_enc<-readRDS("./data/data_at_enc.rda")
 data_bef_enc<-readRDS("./data/data_bef_enc.rda")
 sample_idx<-readRDS("./data/sample_idx.rda")
 
-
 ##======feature pre-selection==========
 cd_out<-c("KUH\\|FLO_MEAS_ID",          #flowsheet facts
+          "KUH\\|PROC_ID",              #order
           "KUH\\|MEDICATION_ID",        #medication
           "KUH\\|DX_ID",                #diagnosis
           "KUMC\\|REPORTS\\|NOTETYPES", #notetypes
           "RELIGION",                   #religion
-          "LANGUAGE")                   #language
+          "LANGUAGE",                   #language
+          'KUH\\|COMPONENT_ID\\:2015',  #lactate
+          'KUH\\|COMPONENT_ID\\:2016'   #lactate
+          )                   
 
 #identify diagnostic folders in KU ED
 ed_cd<-readRDS("../Suspected_Infection/data/feat_at_enc.rda") %>% 
@@ -50,7 +52,7 @@ cd_in<-unique(c(ed_cd[grepl("\\\\TMP VITAL SIGNS",ed_cd$CONCEPT_PATH)&!grepl("((
                 # ed_cd[grepl("\\\\TMP PAIN ASSESSMENT",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED pain assessment
                 ed_cd[grepl("\\\\TMP NAV PRIMARY ASSESSMENT",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED primary assessment
                 # ed_cd[grepl("\\\\TMP RESPIRATORY",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED respiratory
-                # ed_cd[grepl("\\\\TMP SEPSIS SCREEN",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED sepsis screen
+                ed_cd[grepl("\\\\TMP SEPSIS SCREEN",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED sepsis screen
                 ed_cd[grepl("\\\\TMP SKIN/WOUND",ed_cd$CONCEPT_PATH),]$CONCEPT_CD, #ED skin/wound
                 c("KUH|FLO_MEAS_ID:5_SYSTOLIC","KUH|FLO_MEAS_ID:5_DIASTOLIC")))
 ed_cd %<>% 
@@ -80,7 +82,7 @@ data_at_enc_eng<-enroll %>%
 cci_icd<-read.csv("./src/charlson_ICD.csv",stringsAsFactors = F) %>%
   dplyr::mutate(DX_CODE=paste0("\\\\",DX_CODE))
 
-feat_cd<-readRDS("../Suspected_Infection/data/feat_at_enc.rda") %>%
+feat_cd<-readRDS("./data/feat_at_enc.rda") %>%
   dplyr::select(CONCEPT_CD,NAME_CHAR,CONCEPT_PATH) %>%
   dplyr::filter(grepl("(\\\\ICD(9|10))+",CONCEPT_PATH)) %>%
   fuzzy_inner_join(cci_icd,by=c("CONCEPT_PATH"="DX_CODE"),match_fun=str_detect) %>%
@@ -90,12 +92,9 @@ data_bef_enc_cci<-data_bef_enc %>%
   inner_join(feat_cd %>% dplyr::select(CONCEPT_CD,DX,WEIGHT),by=c("VARIABLE"="CONCEPT_CD")) %>%
   group_by(PATIENT_NUM,ENCOUNTER_NUM,DX) %>%
   arrange(abs(DAY_BEF_TRIAGE)) %>%
-  slice(1:1) %>%
+  dplyr::slice(1:1) %>%
   ungroup
 
-
-##======temporal filter (at encounter)===============
-#---filter by time
 data_at_enc2 %<>% 
   bind_rows(data_at_enc_eng) %>%
   bind_rows(data_bef_enc_cci %>%
@@ -105,9 +104,17 @@ data_at_enc2 %<>%
               dplyr::mutate(VARIABLE="CCI",START_SINCE_TRIAGE=-1) %>%
               dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,START_SINCE_TRIAGE)) %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE) %>%
-  left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,ABX_SINCE_TRIAGE,IV_0_SINCE_TRIAGE),
-            by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
-  dplyr::filter(START_SINCE_TRIAGE<=pmin(IV_0_SINCE_TRIAGE,ABX_SINCE_TRIAGE)) # before any intervention
+  left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,SEPSIS_SINCE_TRIAGE,IV_0_SINCE_TRIAGE),
+            by=c("PATIENT_NUM","ENCOUNTER_NUM")) 
+
+saveRDS(data_at_enc2,file="./data/data_all.rda")
+
+
+##======temporal filter (at encounter)===============
+#---filter by time
+data_at_enc2 %<>%
+  dplyr::filter(START_SINCE_TRIAGE<=pmin(coalesce(IV_0_SINCE_TRIAGE,TRT3HR_CMPLT),
+                                         SEPSIS_SINCE_TRIAGE,na.rm=T)) # prediction point
 
 
 ##======feature abstraction===========
@@ -170,7 +177,7 @@ fact_stack<-data_num_agg %>%
   bind_rows(data_bef_enc %>% 
               filter(DAY_BEF_TRIAGE < 0) %>%
               group_by(PATIENT_NUM, ENCOUNTER_NUM, VARIABLE) %>%
-              arrange(DAY_BEF_TRIAGE) %>% slice(1:1) %>%
+              arrange(DAY_BEF_TRIAGE) %>% dplyr::slice(1:1) %>%
               dplyr::mutate(NVAL_NUM=1) %>%
               dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM) %>%
               dplyr::rename(VARIABLE_agg = VARIABLE)) %>%

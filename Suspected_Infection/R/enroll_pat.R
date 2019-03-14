@@ -36,7 +36,7 @@ statements<-paste0(
     "SI_case_ctrl"),
   ".sql"
 )
-#--excecute single snippet
+#--excecute single snippet (if batch execution breaks)
 sql<-parse_sql(statements[8],
                db_link=NULL,
                i2b2_db_schema=config_file$i2b2_db_schema,

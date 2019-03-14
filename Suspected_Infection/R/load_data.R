@@ -35,7 +35,6 @@ pat_at_enc<-dbGetQuery(conn,"select * from SI_PAT_AT_ENC") %>%
 #========save data
 saveRDS(pat_at_enc,file="./data/pat_at_enc.rda")
 
-
 ##==============load data at encounter================
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_AT_ENC")
 chunk_id %<>% 
