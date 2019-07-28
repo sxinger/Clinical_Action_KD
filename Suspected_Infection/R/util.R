@@ -106,12 +106,7 @@ parse_sql<-function(file_path,...){
       params<-gsub(",","",strsplit(trimws(gsub("(/\\*params\\:\\s)","",line),"both")," ")[[1]])
       params_symbol<-params
       #normalize the parameter names
-      params[params=="@dblink"]<-"db_link"
-      params[params=="&&dbname"]<-"db_name"
-      params[params=="&&i2b2"]<-"i2b2_db_schema"
-      params[params=="&&PCORNET_CDM"]<-"cdm_db_schema"
-      params[params=="&&start_date"]<-"start_date"      
-      params[params=="&&end_date"]<-"end_date"   
+      params<-gsub("&&","",params)
     }
     #remove the first line
     line<-gsub("\\t", " ", line)

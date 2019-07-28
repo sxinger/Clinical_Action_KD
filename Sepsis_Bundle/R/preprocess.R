@@ -66,7 +66,7 @@ data_at_enc2<- data_at_enc %>%
 rm(data_at_enc); gc()
 
 
-##=====feature engineering============
+##======feature engineering============
 #---SIRS and OD events
 data_at_enc_eng<-enroll %>%
   dplyr::select("PATIENT_NUM","ENCOUNTER_NUM",
@@ -95,7 +95,7 @@ data_bef_enc_cci<-data_bef_enc %>%
   dplyr::slice(1:1) %>%
   ungroup
 
-data_at_enc2 %<>% 
+data_all<-data_at_enc2 %>% 
   bind_rows(data_at_enc_eng) %>%
   bind_rows(data_bef_enc_cci %>%
               group_by(PATIENT_NUM,ENCOUNTER_NUM) %>%

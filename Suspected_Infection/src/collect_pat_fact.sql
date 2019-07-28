@@ -3,7 +3,7 @@
 /*
 /*in: SI_case_ctrl, patient_dimension
 /*
-/*params: @dblink, &&i2b2
+/*params: &&i2b2_db_schema
 /*
 /*out: SI_pat_at_enc
 /*
@@ -31,7 +31,7 @@ select tr.patient_num
        end as language
       ,pat.death_date
 from SI_case_ctrl tr
-join &&i2b2data.patient_dimension@dblink pat
+join &&i2b2_db_schemadata.patient_dimension pat
 on tr.patient_num = pat.patient_num
 
 

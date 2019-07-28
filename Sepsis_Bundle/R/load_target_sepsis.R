@@ -27,8 +27,8 @@ conn<-connect_to_db("Oracle",config_file)
 trt3hr<-dbGetQuery(c_connect,"select * from TRT3HR_TIMESTAMPS") %>%
   dplyr::select(-OD1_TYPE) %>% unique %>%
   dplyr::mutate(TRT3HR_BEGIN = ifelse(is.na(BOLUS_TRIGGER),pmin(BLOOD_C,ABX,LAC1,na.rm=T),TRT3HR_BEGIN),
-                TRT3HR_END1 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=T),TRT3HR_END1),
-                TRT3HR_END2 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=T),TRT3HR_END2)) %>% #bundle completion defined differently for non-hypotensive cases
+                TRT3HR_END1 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=F),TRT3HR_END1),
+                TRT3HR_END2 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=F),TRT3HR_END2)) %>% #bundle completion defined differently for non-hypotensive cases
   dplyr::mutate(trt3hr_begin = ifelse(is.na(TRT3HR_BEGIN),0,1),
                 trt3hr_end1 = ifelse(is.na(TRT3HR_END1),0,1),
                 trt3hr_end2 = ifelse(is.na(TRT3HR_END2),0,1),
@@ -51,4 +51,5 @@ summary(trt3hr %>% dplyr::select(-ENCOUNTER_NUM,-TRIGGER_TYPE))
 
 # save results
 save(trt3hr,file="./data/sepsis_target_trt3hr.Rdata")
+
 

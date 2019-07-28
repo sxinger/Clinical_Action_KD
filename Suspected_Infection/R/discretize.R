@@ -13,23 +13,28 @@ require_libraries(c("Matrix",
 
 
 ##==============load data==============
-enroll<-readRDS("./data/SI_enroll.rda")
+enroll<-readRDS("./data/SI_enroll_clean.rda")
+
 
 ##=============pick out numerical variables=============
 num_var<-readRDS("./data/feat_at_enc.rda") %>%
-  filter(!is.na(q_1))
+  filter(!is.na(q_1)&distinct_val > 5) %>%
+  dplyr::select(-NAME_CHAR,-CONCEPT_PATH) %>%
+  unique
 
-data_at_enc_discrt<-readRDS("./data/data_at_enc.rda") %>%
-  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
+#--load Q1 and Q3 of each variable
+data_at_enc_discrt<-readRDS("./data/data_at_enc.rda") %>%   #already applied frequency filter
+  semi_join(enroll,by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>% #exclusions for enroll_clean
   inner_join(num_var %>% dplyr::select(VARIABLE,q_5,q_10,q_15),
-             by="VARIABLE") 
+             by="VARIABLE")
 
+#--discretize the variables
 data_at_enc_discrt1<-data_at_enc_discrt %>%
   group_by(VARIABLE) %>%
   dplyr::mutate(NVAL_NUM2=case_when(NVAL_NUM < q_5 ~ "low",
                                     NVAL_NUM >= q_5 & NVAL_NUM < q_10 ~ "mid_low",
                                     NVAL_NUM >= q_10 & NVAL_NUM < q_15 ~ "mid_high",
-                                    NVAL_NUM > q_15 ~ "high")) %>%
+                                    NVAL_NUM >= q_15 ~ "high")) %>%
   ungroup %>%
   filter(!is.na(NVAL_NUM2)) %>%
   mutate(VARIABLE2=VARIABLE) %>%
@@ -37,8 +42,8 @@ data_at_enc_discrt1<-data_at_enc_discrt %>%
   dplyr::mutate(VARIABLE=paste0("num_",VARIABLE)) %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
-
-chunk_n<-100
+#--identify the "missing" category
+chunk_n<-10
 pat_chunk<-enroll %>% 
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
   dplyr::mutate(chunk=sample(1:chunk_n,n(),replace=T),

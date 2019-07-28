@@ -10,36 +10,32 @@ require_libraries(c(
                     "plyr",
                     "magrittr", 
                     "stringr",
-                    "xgboost",
-                    "h2o",
-                    "pdp"
-                  ))
+                    "xgboost"))
+
+#add additional targets
+rand_sample<-readRDS("./data/rand_sample_idx.rda") %>%
+  dplyr::mutate(TRT3HR_END1 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=F),TRT3HR_END1),
+                TRT3HR_END2 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=F),TRT3HR_END2),
+                TRT3HR_3COMP = pmax(BLOOD_C,ABX,LAC1,na.rm=F),
+                trt3hr_end1_3hr = ifelse((is.na(TRT3HR_END1) | TRT3HR_END1 > 3),0,1),
+                trt3hr_end2_3hr = ifelse((is.na(TRT3HR_END2) | TRT3HR_END2 > 3),0,1)) %>%
+  dplyr::mutate(fast_trt3hr_3comp=ifelse((is.na(TRT3HR_3COMP) | TRT3HR_3COMP > 3),0,1),
+                fast_trt3hr_4comp=fast_trt3hr_3comp*fast_trt3hr)
+
+summary(rand_sample[,c("fast_trt3hr_mix","fast_trt3hr",
+                       "fast_trt3hr_3comp","fast_trt3hr_4comp")])
+
+saveRDS(rand_sample,file="./data/sepsis_y_rs_idx.rda")
 
 ##=====================model development=======================
-## global parameters
-eval_metric<-"auc"
-objective<-"binary:logistic"
-grid_params_tree<-expand.grid(
-  max_depth=c(4,6,10),
-  # max_depth=10,
-  eta=c(0.3,0.1,0.02,0.01),
-  eta=0.02,
-  min_child_weight=1,
-  subsample=0.8,
-  colsample_bytree=0.8, 
-  gamma=1
-)
-
 ## Load in fact_stack and pat_tbl
 fact_stack<-readRDS("./data/sepsis_presel_long_ohc.rda")
-rand_sample<-readRDS("./data/rand_sample_idx.rda")
-
+rand_sample<-readRDS("./data/sepsis_y_rs_idx.rda")
 
 ## partition 
 x_mt<-fact_stack %>%
   filter(!grepl("^((Lactate)|(Organ Dysfunc_OD:IL))+",VARIABLE_agg)) %>% # drop lactate
   filter(!grepl("((Infection Grp POA_038 Septicemia)|(Infection POA_038))+",VARIABLE_agg)) %>% # drop septicemia dx POA
-  filter(!grepl("(Scr_)+",VARIABLE_agg)) %>% # duplicates
   filter(!grepl("(Organ Dysfunc_distincts)+",VARIABLE_agg)) %>% # drop distinct OD sites (confound with hypotension)
   # filter(!grepl("^((SBP_)|(MAP_)|(DBP_)|(Organ Dysfunc_OD:Hypotension))+",VARIABLE_agg)) %>% # drop hypotension-related
   semi_join(rand_sample,by="ENCOUNTER_NUM") %>%
@@ -50,30 +46,44 @@ x_mt<-fact_stack %>%
                         val="NVAL")
 
 y_mt<-rand_sample %>%
-  mutate(subgrp=ifelse(subgrp > 1, 2, subgrp)) %>%
+  mutate(subgrp2=ifelse(subgrp > 1, 2, subgrp)) %>%
   arrange(ENCOUNTER_NUM)
 
-mean(y_mt$fast_trt3hr) #1.3%
+mean(y_mt$fast_trt3hr_3comp) #13%
+mean(y_mt$fast_trt3hr_4comp) #1.3%
 
 all(row.names(x_mt)==y_mt$ENCOUNTER_NUM)
 
+## global parameters
+eval_metric<-"auc"
+objective<-"binary:logistic"
+grid_params_tree<-expand.grid(
+  max_depth=c(6,10),
+  # max_depth=10,
+  eta=c(0.1,0.02,0.01),
+  # eta=0.02,
+  min_child_weight=1,
+  subsample=0.8,
+  colsample_bytree=0.8, 
+  gamma=1
+)
 
 ## modeling
 out_grp<-list()
 # sub-group analysis
 for(grp in 1:2){
   if(grp==1){
-    dtrain<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="T")&(y_mt$subgrp==grp)),],
-                        label=y_mt[which((y_mt$part73=="T")&(y_mt$subgrp==grp)),]$fast_trt3hr_mix)
+    dtrain<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="T")&(y_mt$subgrp2==grp)),],
+                        label=y_mt[which((y_mt$part73=="T")&(y_mt$subgrp2==grp)),]$fast_trt3hr_3comp)
     
-    dtest<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="V")&(y_mt$subgrp==grp)),],
-                       label=y_mt[which((y_mt$part73=="V")&(y_mt$subgrp==grp)),]$fast_trt3hr_mix)
+    dtest<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="V")&(y_mt$subgrp2==grp)),],
+                       label=y_mt[which((y_mt$part73=="V")&(y_mt$subgrp2==grp)),]$fast_trt3hr_3comp)
   }else{
-    dtrain<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="T")&(y_mt$subgrp==grp)),],
-                        label=y_mt[which((y_mt$part73=="T")&(y_mt$subgrp==grp)),]$fast_trt3hr)
+    dtrain<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="T")&(y_mt$subgrp2==grp)),],
+                        label=y_mt[which((y_mt$part73=="T")&(y_mt$subgrp2==grp)),]$fast_trt3hr_4comp)
     
-    dtest<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="V")&(y_mt$subgrp==grp)),],
-                       label=y_mt[which((y_mt$part73=="V")&(y_mt$subgrp==grp)),]$fast_trt3hr)
+    dtest<-xgb.DMatrix(data=x_mt[which((y_mt$part73=="V")&(y_mt$subgrp2==grp)),],
+                       label=y_mt[which((y_mt$part73=="V")&(y_mt$subgrp2==grp)),]$fast_trt3hr_4comp)
   }
   
   ## tune
@@ -115,7 +125,7 @@ for(grp in 1:2){
     }
   }
   hyper_param<-bst_grid[which.max(bst_grid$metric),]
-  valid_cv<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which((y_mt$part73=="T")&(y_mt$subgrp==grp))],
+  valid_cv<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which((y_mt$part73=="T")&(y_mt$subgrp2==grp))],
                        valid_type = 'T',
                        pred = bst_grid_cv[,which.max(bst_grid$metric)],
                        real = getinfo(dtrain,"label"),
@@ -132,7 +142,7 @@ for(grp in 1:2){
                       objective="binary:logistic",
                       print_every_n = 100)
   
-  valid<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which((y_mt$part73=="V")&(y_mt$subgrp==grp))],
+  valid<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which((y_mt$part73=="V")&(y_mt$subgrp2==grp))],
                     valid_type = 'V',
                     pred = predict(xgb_tune,newdata=dtest),
                     real = getinfo(dtest,"label"),
@@ -144,63 +154,26 @@ for(grp in 1:2){
     mutate(Gain_rescale = round((Gain/Gain[1])*100)) %>%
     dplyr::mutate(rank = 1:n())
   
-  # top k partial
-  feat_dict<-readRDS("./data/presel_data_dict.rda")
-  
-  k<-nrow(var_imp)
-  part_eff_topk<-c()
-  for(j in seq_len(k)){
-    feat_j<-c(var_imp %>% 
-                dplyr::select(Feature) %>%
-                dplyr::slice(j) %>% unlist)
-    
-    #breaking points are saved in data dictionary
-    pred_grid<-feat_dict %>% ungroup %>%
-      filter(VARIABLE_agg == feat_j[1]) %>%
-      dplyr::select(starts_with("q_")) %>%
-      gather(key,val) %>%
-      filter(!is.na(val))
-    
-    pred_grid_distinct<-pred_grid %>% dplyr::select(val) %>% unique
-    names(pred_grid_distinct)<-feat_j[1]
-    
-    #evaluate partial effect
-    part_eff<-partial(object=xgb_tune,
-                      pred.var=feat_j[1],
-                      train=x_mt[which(y_mt$part73=="T"),],
-                      pred.grid=pred_grid_distinct,
-                      prob = T,
-                      progress="text")
-    
-    #track both predictor values and predicted probabilities at each cut
-    pred_grid %<>% left_join(part_eff %>% mutate(val=get(feat_j[1])) %>%
-                               dplyr::select(val,yhat),
-                             by="val") %>%
-      mutate(feature=feat_j[1])
-    
-    part_eff_topk %<>%
-      bind_rows(pred_grid)
-  }
-  
   # save results
   gbm_out<-list(valid_out=valid,
                 model=xgb_tune,
                 var_imp=var_imp,
-                part_eff=part_eff_topk,
                 hyper_param=hyper_param)
   
   out_grp[[paste0("grp",grp)]]<-gbm_out
 
 }
-saveRDS(out_grp,file="./output/subgrp_analysis_gbm.rda")
+saveRDS(out_grp,file="./output/subgrp_analysis_gbm2.rda")
+
+
 
 ##=====================post-validation====================
 #cross validate models of two groups
-out_grp<-readRDS("./output/subgrp_analysis_gbm.rda")
+out_grp<-readRDS("./output/subgrp_analysis_gbm2.rda")
 
 ## Load in fact_stack and pat_tbl
 fact_stack<-readRDS("./data/sepsis_presel_long_ohc.rda")
-rand_sample<-readRDS("./data/rand_sample_idx.rda")
+rand_sample<-readRDS("./data/sepsis_y_rs_idx.rda")
 
 ## partition 
 x_mt<-fact_stack %>%
@@ -224,7 +197,7 @@ for(grp in 1:2){
   if(grp==1){
     #test set for group2
     dtest<-xgb.DMatrix(data=x_mt[which(y_mt$subgrp==grp+1),],
-                       label=y_mt[which(y_mt$subgrp==grp+1),]$fast_trt3hr_mix)
+                       label=y_mt[which(y_mt$subgrp==grp+1),]$fast_trt3hr_3comp)
     #get model from group1
     xgb_tune<-out_grp[[paste0("grp",grp)]]$model
     valid<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which(y_mt$subgrp==grp+1)],
@@ -235,7 +208,7 @@ for(grp in 1:2){
   }else{
     #test set for group1
     dtest<-xgb.DMatrix(data=x_mt[which((y_mt$subgrp==grp-1)),],
-                       label=y_mt[which((y_mt$subgrp==grp-1)),]$fast_trt3hr)
+                       label=y_mt[which((y_mt$subgrp==grp-1)),]$fast_trt3hr_4comp)
     #get model from group2
     xgb_tune<-out_grp[[paste0("grp",grp)]]$model
     valid<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which(y_mt$subgrp==grp-1)],

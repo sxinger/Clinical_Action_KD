@@ -3,7 +3,7 @@
 /*
 /*in: SI_case_ctrl, observation_fact
 /*
-/*params: @dblink, &&i2b2
+/*params: @dblink, &&i2b2, &&cohort
 /*
 /*out: SI_obs_at_enc
 /*
@@ -23,10 +23,10 @@ select tr.patient_num
       ,round((obs.start_date-tr.triage_start)*24,2) start_since_triage
       ,obs.end_date end_dt
       ,round((obs.end_date-tr.triage_start)*24,2) end_since_triage
-from SI_case_ctrl tr
+from &&cohort tr
 join &&i2b2data.observation_fact@dblink obs
 on tr.patient_num = obs.patient_num and tr.encounter_num = obs.encounter_num and
-   obs.start_date <= tr.triage_start + coalesce(tr.pred_point,tr.end_since_triage)/24 and
+   obs.start_date <= tr.triage_start + coalesce(96,tr.end_since_triage)/24 and
    to_char(obs.start_date,'HH24:MI:SS') <> '00:00:00'
 
 

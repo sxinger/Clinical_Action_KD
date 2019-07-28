@@ -1,4 +1,3 @@
-#### Determine censor points for controls ####
 ##========prepare
 rm(list=ls()); gc()
 setwd("~/proj_sepsis/Clinical_Actions_KD/Suspected_Infection")
@@ -17,8 +16,7 @@ conn<-connect_to_db("Oracle","OCI",config_file)
 ##=======load cohort=========
 enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL") %>%
   filter(DT_CLASS != "U") %>% # remove people with undetermined transition time
-  filter(!(CASE_CTRL==0 & !is.na(ABX_SINCE_TRIAGE))) %>% #remove ambiguous nonSI cases
-  filter((!is.na(TRANS_SINCE_TRIAGE) & SI_SINCE_TRIAGE <= TRANS_SINCE_TRIAGE) | is.na(SI_SINCE_TRIAGE)) #only use cases with SI discovered within ED
+  filter(!(CASE_CTRL==0 & !is.na(ABX_SINCE_TRIAGE))) #remove ambiguous nonSI cases
 
 N<-length(unique(enroll$ENCOUNTER_NUM))
 P<-sum(enroll$CASE_CTRL)
@@ -38,19 +36,21 @@ saveRDS(pat_at_enc,file="./data/pat_at_enc.rda")
 ##==============load data at encounter================
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_AT_ENC")
 chunk_id %<>% 
-  filter(!CONCEPT_PREFIX %in% c("KUH|HOSP_ADT_CLASS",           #ADT class
-                                "KUMC|VISITDETAIL|HSPSERVICES", #hospital service department --daily
-                                "KUMC|VISITDETAIL|POS(O2)",     #hospital service department --daily
-                                # "KUMC|REPORTS|NOTETYPES",     #tval_char contains narrative texts --NLP needed
-                                "KUMC|SMRT|N",                  #smart field in notes --not informative
-                                "KUMC|DischargeDisposition",    #discharge disposition --post events
-                                "CPT",                          #procedure-billing
-                                "HCPCS",                        #procedure-billing 
-                                "KUH|ED_EPISODE",               #ED episode
-                                # "KUH|DX_ID",                  #diagnosis --needed for characterizing encounters (not used as predictors)
-                                # "ICD",                        #diagnosis --daily
-                                "KUH|PROC_ID"                   #procedure order --label leakage risk
+  filter(!CONCEPT_PREFIX %in% c("KUH|HOSP_ADT_CLASS"            #ADT class
+                                ,"KUMC|VISITDETAIL|HSPSERVICES" #hospital service department --daily
+                                ,"KUMC|VISITDETAIL|POS(O2)"     #hospital service department --daily
+                                # ,"KUMC|REPORTS|NOTETYPES"     #tval_char contains narrative texts --NLP needed
+                                ,"KUMC|SMRT|N"                  #smart field in notes --not informative
+                                ,"KUMC|DischargeDisposition"    #discharge disposition --post events
+                                ,"CPT"                          #procedure-billing
+                                ,"HCPCS"                        #procedure-billing 
+                                ,"KUH|ED_EPISODE"               #ED episode
+                                # ,"KUH|DX_ID"                  #diagnosis --needed for characterizing encounters (not used as predictors)
+                                # ,"ICD"                        #diagnosis --daily, mayb be needed for characterizing encounters (not used as predictors)
+                                ,"KUH|PROC_ID"                  #procedure order --label leakage risk
+                                ,"LDA"                          #seems to be new flowsheet concepts, not sure how to use it
                                 ))
+
 
 data_at_enc<-c()
 feat_at_enc<-c()
@@ -209,7 +209,8 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
   cat("finish collecting data and feature summaries for",i,"in",lapse_i,units(lapse_i),".\n")
 }
 
-#===============missing labels for flowsheet concepts====
+
+#===============ToDo: missing labels for some flowsheet, medication and lab concepts====
 #--link to nheron, initial
 # config_nh_file<-read.csv('./config_nh.csv')
 # conn_nh<-connect_to_db("Oracle","OCI",config_nh_file)
@@ -222,15 +223,15 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
 # saveRDS(flo_meas_cd,file="./data/additional_fs_cd.rda")
 
 #--following times (after initial download)
-flo_meas_cd<-readRDS("./data/additional_fs_cd.rda")
-feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
-  bind_rows(feat_at_enc %>% filter(is.na(NAME_CHAR)) %>%
-              dplyr::select(-NAME_CHAR,-CONCEPT_PATH) %>%
-              dplyr::mutate(CODE=gsub("_.*","",gsub(".*:","",CONCEPT_CD))) %>%
-              left_join(flo_meas_cd,by="CODE")) %>%
-  group_by(VARIABLE,CONCEPT_CD) %>%
-  dplyr::slice(1:1) %>%
-  ungroup
+# flo_meas_cd<-readRDS("./data/additional_fs_cd.rda")
+# feat_at_enc2<-feat_at_enc %>% filter(!is.na(NAME_CHAR)) %>%
+#   bind_rows(feat_at_enc %>% filter(is.na(NAME_CHAR)) %>%
+#               dplyr::select(-NAME_CHAR,-CONCEPT_PATH) %>%
+#               dplyr::mutate(CODE=gsub("_.*","",gsub(".*:","",CONCEPT_CD))) %>%
+#               left_join(flo_meas_cd,by="CODE")) %>%
+#   group_by(VARIABLE,CONCEPT_CD) %>%
+#   dplyr::slice(1:1) %>%
+#   ungroup
 
 #===============attach patient level info
 pat_at_enc<-readRDS("./data/pat_at_enc.rda")
@@ -253,7 +254,7 @@ data_at_enc %<>%
   bind_rows(pat_at_enc2)
 
 #------------augment feature dictionary with patient-level info
-feat_at_enc2 %<>%
+feat_at_enc %<>%
   bind_rows(pat_at_enc2 %>%
               left_join(enroll %>% dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,CASE_CTRL),
                         by=c("PATIENT_NUM","ENCOUNTER_NUM")) %>%
@@ -280,14 +281,21 @@ feat_at_enc2 %<>%
 #===============pre-filter: frequency (5%)
 freq_filter_rt<-0.05
 data_at_enc %<>% 
-  semi_join(feat_at_enc2 %>% filter(enc_wi >= round(freq_filter_rt*N)),
+  semi_join(feat_at_enc %>% filter(enc_wi >= round(freq_filter_rt*N)),
             by="VARIABLE")
+
+#===============remove concept duplications
+feat_at_enc %<>%
+  distinct(VARIABLE, CONCEPT_CD, .keep_all = TRUE)
+
 
 #========save data
 saveRDS(data_at_enc,file="./data/data_at_enc.rda")
-saveRDS(feat_at_enc2,file="./data/feat_at_enc.rda")
+saveRDS(feat_at_enc,file="./data/feat_at_enc.rda")
 
-rm(data_at_enc,feat_at_enc,feat_at_enc2); gc()
+#--clean up some space
+rm(data_at_enc,feat_at_enc,feat_at_enc2,pat_at_enc,pat_at_enc2);gc()
+
 
 ##==============load data before encounter (simple)=====================
 chunk_id<-dbGetQuery(conn,"select distinct concept_prefix from SI_OBS_BEF_ENC")
@@ -361,23 +369,22 @@ for(i in seq_along(chunk_id$CONCEPT_PREFIX)){
 }
 
 
-#=====pre-filter: frequency
+#=====pre-filter: frequency (5%)
 freq_filter_rt<-0.05
 data_bef_enc %<>% 
   dplyr::select(-CASE_CTRL) %>%
   semi_join(feat_bef_enc %>% filter(enc_wi >= round(freq_filter_rt*N)),
-            by="VARIABLE")
+            by="VARIABLE") %>%
+  unique
+
+#===============remove concept duplications
+feat_bef_enc %<>%
+  distinct(VARIABLE,.keep_all = TRUE)
 
 #========save data
 saveRDS(data_bef_enc,file="./data/data_bef_enc.rda")
 saveRDS(feat_bef_enc,file="./data/feat_bef_enc.rda")
 
-
-##==============load all historical dx=====================
-historical_dx<-dbGetQuery(conn,"select * from SI_HIST_DX")
-
-#========save data
-saveRDS(hist_dx,file="./data/hist_dx.rda")
 
 
 

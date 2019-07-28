@@ -10,7 +10,7 @@ require_libraries(c("Matrix",
                     "magrittr", 
                     "stringr",                    
                     "xgboost",
-                    "pdp"
+                    "rBayesianOptimization"
                   ))
 
 ##======================== load data =====================================
@@ -30,78 +30,79 @@ dtest<-xgb.DMatrix(data=x_mt[which(sample_idx$rs$rs_part73=="V"),],
 ##======================== tune ============================================
 start_k_i<-Sys.time()
 
-## global parameters
-eval_metric<-"auc"
-objective<-"binary:logistic"
-grid_params_tree<-expand.grid(
-  # max_depth=c(2,6),
-  max_depth=6,
-  # eta=c(0.3,0.1),
-  eta=0.1,
-  # min_child_weight=c(1,10),
-  min_child_weight=1,
-  # subsample=c(0.5,0.8,1),
-  subsample=0.8,
-  # colsample_bytree=c(0.5,0.8,1), 
-  colsample_bytree=0.8, 
-  gamma=1
-)
-
-verb<-TRUE
-bst_grid<-c()
-bst_grid_cv<-c()
-metric_name<-paste0("test_", eval_metric,"_mean")
-metric_sd_name<-paste0("test_", eval_metric,"_std")
-grid_params<-grid_params_tree
-
-for(i in seq_len(dim(grid_params)[1])){
-  start_i<-Sys.time()
-  param<-as.list(grid_params[i,])
-  # param$scale_pos_weight=mean(as.numeric(as.character(y_mt$complt))) #inbalance sampling
-  param$scale_pos_weight=1 #balance sampling
+#--tune hyperparameter (less rounds, early stopping)
+xgb_cv_bayes <- function(max_depth, min_child_weight, subsample, 
+                         eta=0.05,colsample_bytree=0.8,lambda=1,alpha=0,gamma=1) {
+  cv <- xgb.cv(params = list(booster = "gbtree",
+                             max_depth = max_depth,
+                             min_child_weight = min_child_weight,
+                             subsample = subsample, 
+                             eta = eta,
+                             colsample_bytree = colsample_bytree,
+                             lambda = lambda,
+                             alpha = alpha,
+                             gamma = gamma,
+                             objective = "binary:logistic",
+                             eval_metric = "auc"),
+               data = dtrain,
+               nround = 100,
+               # folds = folds,
+               nfold = 5,
+               prediction = TRUE,
+               showsd = TRUE,
+               early_stopping_rounds = 5,
+               maximize = TRUE,
+               verbose = 0)
   
-  bst <- xgb.cv(param,
-                dtrain,
-                objective = objective,
-                metrics = eval_metric,
-                maximize = TRUE,
-                nrounds=1000,
-                nfold = 5,
-                early_stopping_rounds = 100,
-                print_every_n = 100,
-                prediction = T) #keep cv results
-  
-  bst_grid<-rbind(bst_grid, cbind(grid_params[i,],
-                                  metric=max(bst$evaluation_log[[metric_name]]),
-                                  steps=which(bst$evaluation_log[[metric_name]]==max(bst$evaluation_log[[metric_name]]))[1]))
-  
-  bst_grid_cv<-cbind(bst_grid_cv,bst$pred)
-  
-  if(verb){
-    cat('finished train case:',paste0(paste0(c(colnames(grid_params),"scale_pos_weight"),"="),param,collapse="; "),
-        'in',Sys.time()-start_i,units(Sys.time()-start_i),"\n")
-    start_i<-Sys.time()
-  }
+  list(Score = cv$evaluation_log$test_auc_mean[cv$best_iteration],
+       Pred = cv$pred)
 }
-hyper_param<-bst_grid[which.max(bst_grid$metric),]
-valid_cv<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which(y_mt$part73=="T")],
-                     valid_type = 'T',
-                     pred = bst_grid_cv[,which.max(bst_grid$metric)],
-                     real = getinfo(dtrain,"label"),
-                     stringsAsFactors = F)
 
+OPT_Res <- BayesianOptimization(xgb_cv_bayes,
+                                bounds = list(max_depth = c(4L,10L),
+                                              min_child_weight = c(1L,10L),
+                                              subsample = c(0.5,0.8)),
+                                init_grid_dt = NULL,
+                                init_points = 10,
+                                n_iter = 10,
+                                acq = "ucb",
+                                kappa = 2.576,
+                                eps = 0.0,
+                                verbose = TRUE)
+
+#--determine number of trees, or steps (more rounds, early stopping)
+bst <- xgb.cv(param=data.frame(max_depth=OPT_Res$Best_Par[1],
+                               min_child_weight=OPT_Res$Best_Par[2],
+                               subsample=OPT_Res$Best_Par[3],
+                               eta=0.05,
+                               colsample_bytree=0.8,
+                               lambda=1,
+                               alpha=0,
+                               gamma=1),
+              dtrain,
+              objective = "binary:logistic",
+              metrics = "auc",
+              maximize = TRUE,
+              nrounds=1000,
+              folds = folds,
+              early_stopping_rounds = 50,
+              print_every_n = 50,
+              prediction = F)
+
+steps<-which(bst$evaluation_log$test_auc_mean==max(bst$evaluation_log$test_auc_mean))
 
 ##================================ validation =====================================
 watchlist<-list(test=dtest)
 xgb_tune<-xgb.train(data=dtrain,
-                    max_depth=hyper_param$max_depth,
+                    max_depth=OPT_Res$Best_Par[1],
+                    min_child_weight=OPT_Res$Best_Par[2],
+                    subsample=OPT_Res$Best_Par[3],
                     maximize = TRUE,
-                    eta=hyper_param$eta,
-                    nrounds=hyper_param$steps,
+                    eta=0.01,
+                    nrounds=steps,
                     eval_metric="auc",
-                    watchlist = watchlist,
                     objective="binary:logistic",
-                    print_every_n = 100)
+                    verbose = 0)
 
 valid<-data.frame(ENCOUNTER_NUM = row.names(x_mt)[which(y_mt$part73=="V")],
                   valid_type = 'V',
@@ -119,50 +120,14 @@ var_imp<-xgb.importance(colnames(x_mt),model=xgb_tune) %>%
   dplyr::mutate(rank = 1:n()) %>%
   left_join(feat_dict,by=c("Feature"="VARIABLE"))
 
-##============================= top k partial ===============================================
-feat_dict<-readRDS("./data/feat_at_enc.rda")
-k<-nrow(var_imp)
-part_eff_topk<-c()
-for(j in seq_len(k)){
-  feat_j<-c(var_imp %>% 
-              dplyr::select(Feature) %>%
-              dplyr::slice(j) %>% unlist)
-  
-  #breaking points are saved in data dictionary
-  pred_grid<-feat_dict %>% ungroup %>%
-    filter(VARIABLE_agg == feat_j[1]) %>%
-    dplyr::select(starts_with("q_")) %>%
-    gather(key,val) %>%
-    filter(!is.na(val))
-  
-  pred_grid_distinct<-pred_grid %>% dplyr::select(val) %>% unique
-  names(pred_grid_distinct)<-feat_j[1]
-  
-  #evaluate partial effect
-  part_eff<-partial(object=xgb_tune,
-                    pred.var=feat_j[1],
-                    train=x_mt[which(y_mt$part73=="T"),],
-                    pred.grid=pred_grid_distinct,
-                    prob = T,
-                    progress="text")
-  
-  #track both predictor values and predicted probabilities at each cut
-  pred_grid %<>% left_join(part_eff %>% mutate(val=get(feat_j[1])) %>%
-                             dplyr::select(val,yhat),
-                           by="val") %>%
-    mutate(feature=feat_j[1])
-  
-  part_eff_topk %<>%
-    bind_rows(pred_grid)
-}
 
 ##========================== save results ============================
 gbm_out<-list(data=Xy_sparse,
               valid_out=rbind(valid_cv,valid),
               model=xgb_tune,
               var_imp=feat_sel,
-              part_eff=part_eff_topk,
-              hyper_param=hyper_param)
+              opt_hyper=OPT_Res,
+              opt_steps=steps)
 
 saveRDS(gbm_out,file=paste0("./output/gbm1_rec_fs",k,".rda"))
 

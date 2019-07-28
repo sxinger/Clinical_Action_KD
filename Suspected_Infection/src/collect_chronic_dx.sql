@@ -3,7 +3,7 @@
 /*
 /*in: SI_case_ctrl, concept_dimension, chronic_dx_cd
 /*
-/*params: @dblink, &&i2b2, &&start_date
+/*params: &&i2b2_db_schema, &&start_date
 /*
 /*out: SI_chronic_dx
 /*
@@ -15,7 +15,7 @@ select (dx.DX_type || ':' || dx.DX_code) icd_cd
       ,dx.DX icd_label
       ,dx.DX_group icd_grp
       ,cd.concept_path 
-from &&i2b2data.concept_dimension@dblink cd
+from &&i2b2_db_schemadata.concept_dimension cd
 join CHRONIC_DX_CD dx 
 on cd.concept_cd = (dx.DX_type || ':' || dx.DX_code) and
    cd.concept_path like '\i2b2\Diagnoses\ICD%'
@@ -27,7 +27,7 @@ select dp.icd_cd
       ,cd.concept_cd
       ,cd.name_char
 from dx_path dp
-join &&i2b2data.concept_dimension@dblink cd
+join &&i2b2_db_schemadata.concept_dimension cd
 on cd.concept_path like (dp.concept_path || '%') and
    cd.concept_path like '\i2b2\Diagnoses\ICD%'
 )
@@ -39,7 +39,7 @@ select tr.patient_num
       ,obs.modifier_cd modifier
       ,max(obs.start_date) start_dt
 from SI_case_ctrl tr
-join &&i2b2data.observation_fact@dblink obs 
+join &&i2b2_db_schemadata.observation_fact obs 
 on tr.patient_num = obs.patient_num and 
    obs.encounter_num <> tr.encounter_num and 
    (obs.concept_cd like 'KUH|DX_ID%' or obs.concept_cd like 'ICD%') and

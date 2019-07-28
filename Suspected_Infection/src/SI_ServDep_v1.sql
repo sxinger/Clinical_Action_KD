@@ -3,7 +3,7 @@
 /*
 /*in: ED_SI, blueherondata.observation_fact,blueherondata.concept_dimension 
 /*
-/*params: @dblink, &&i2b2
+/*params: &&i2b2_db_schema
 /*
 /*out: SI_ServDep
 /*
@@ -18,7 +18,7 @@ select distinct
       ,obs.start_date IO_time
       ,round((obs.start_date - si.triage_start)*24,3) hr_since_triage
 from ED_eligb si
-join &&i2b2data.observation_fact@dblink obs
+join &&i2b2_db_schemadata.observation_fact obs
 on si.patient_num = obs.patient_num and 
    si.encounter_num = obs.encounter_num and
    (obs.concept_cd like 'KUH|VISITDETAIL|HSP%' or
@@ -39,7 +39,7 @@ select distinct
       ,d.IO_time
       ,d.hr_since_triage
 from collect_dep d
-join &&i2b2data.concept_dimension@dblink cd
+join &&i2b2_db_schemadata.concept_dimension cd
 on d.ServDep_code = cd.concept_cd
 where to_char(d.IO_time,'HH24:MI:SS') <> '00:00:00'
 )
@@ -65,7 +65,7 @@ select distinct
       ,round((obs.start_date - si.triage_start)*24,3) hr_since_triage
       ,row_number() over (partition by obs.patient_num, obs.encounter_num order by obs.start_date) rn
 from ED_eligb si
-join &&i2b2data.observation_fact@dblink obs
+join &&i2b2_db_schemadata.observation_fact obs
 on si.patient_num = obs.patient_num and 
    si.encounter_num = obs.encounter_num and
    obs.concept_cd in ('KUH|PROC_ID:263','KUH|PROC_ID:10261622','KUH|PROC_ID:10261623','KUH|PROC_ID:10250968','KUH|PROC_ID:10211122', /*admit to IP*/

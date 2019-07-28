@@ -15,10 +15,10 @@ config_file<-read.csv('./config.csv')
 conn<-connect_to_db("Oracle","OCI",config_file)
 
 ##==============load cohort and define targets=========
-enroll<-dbGetQuery(conn,"select * from ED_SI_SEPSIS_STAGE") %>%
+enroll<-dbGetQuery(conn,"select * from SI_CASE_CTRL") %>%
   filter(DT_CLASS != 'U') %>%
   filter(!(is.na(SI_SINCE_TRIAGE) & !is.na(ABX_SINCE_TRIAGE))) %>% #remove ambiguous nonSI cases
-  filter(SEPSIS_IND==1 & SEPSIS_SINCE_TRIAGE<=48 & SI_SINCE_TRIAGE<=13) %>%   #all sepsis patients
+  # filter(SEPSIS_IND==1 & SEPSIS_SINCE_TRIAGE<=48 & SI_SINCE_TRIAGE<=13) %>%   #all sepsis patients
   dplyr::mutate(SEPSIS_IND=as.numeric(!is.na(SIRS_2_SINCE_TRIAGE)*
                                       !is.na(OD_1_SINCE_TRIAGE)*
                                       !is.na(SI_SINCE_TRIAGE)),
