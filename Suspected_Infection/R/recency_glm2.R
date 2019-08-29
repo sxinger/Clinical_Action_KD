@@ -22,32 +22,37 @@ y_mt<-Xy_sparse$y_mt
 
 ##==============minimal set exploration=============
 #select variables
-k<-968
+k<-1075
 glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
 var_imp<-glm_out$var_imp %>%
   filter(!(Feature %in% c("KUH|FLO_MEAS_ID:301250_mid_low",
                           "KUH|FLO_MEAS_ID:301250_low"))) %>%
   filter(!grepl("(\\_miss)+",Feature)) %>%
-  dplyr::mutate(rank=1:n())
+  dplyr::mutate(rank=1:n()) %>%
+  group_by(sign) %>%
+  dplyr::mutate(rank_sign=rank(rank)) %>%
+  ungroup
+  
 
 # write.csv(var_imp,file=paste0("./output/glm1_rec_fs",k,".csv"),
 #           row.names=F)
 
 P<-nrow(var_imp)
-# k<-10
+# k<-5
+k<-12
 # k<-20
 # k<-30
 # k<-40
 # k<-50
 # k<-60
 # k<-80
-k<-120
+# k<-120
 # k<-160
 # k<-240
 
-demo<-c("AGE_GRP","SEX_MALE")  
+demo<-c("AGE_GRP")  
 var_lst<-c(which(grepl(paste0("(",paste(demo,collapse=")|("),")"),colnames(x_mt))),
-           which(colnames(x_mt) %in% var_imp$Feature[seq_len(k)]))
+           which(colnames(x_mt) %in% var_imp$Feature[(var_imp$rank_sign<=k)]))
 
 #traing and testing sets
 train_mt<-cbind(x_mt[which(sample_idx$rs$rs_part73=="T"),var_lst],
@@ -133,8 +138,8 @@ var_imp2 %<>%
 
 ##=============================finalize results==================================
 #check performace before saving the results
-pROC::auc(valid$real,valid$pred)
-pROC::ci.auc(valid$real,valid$pred)
+pROC::auc(valid$real,valid$pred) #0.0.8649
+pROC::ci.auc(valid$real,valid$pred) #0.8586-0.8711
 
 # save results
 glm_out<-list(valid_out=rbind(valid_cv,valid),

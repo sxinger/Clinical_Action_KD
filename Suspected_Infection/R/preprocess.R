@@ -12,6 +12,7 @@ require_libraries(c("Matrix",
 ))
 
 ##==============load features================
+#--augmented data matrix
 feat_dict<-readRDS("./data/feat_at_enc_aug.rda") %>%
   bind_rows(readRDS("./data/feat_bef_enc_aug.rda")) %>%
   dplyr::select(VARIABLE,CONCEPT_CD,NAME_CHAR,CONCEPT_PATH,
@@ -19,10 +20,11 @@ feat_dict<-readRDS("./data/feat_at_enc_aug.rda") %>%
   dplyr::mutate(uni_p_val=ifelse(log_odds_ratio_sd==0, 1e-10,
                                  ifelse(log_odds_ratio_sd==Inf,1,
                                         2*pnorm(abs(log(odds_ratio_emp)/log_odds_ratio_sd),lower.tail = F))))
-#420,507
+#422,605
 
-# feat_dict %<>% filter(uni_p_val<=0.01)
-#41,512
+feat_dict %<>% filter(uni_p_val<=0.01)
+length(unique(feat_dict$VARIABLE))
+#43,235
 
 saveRDS(feat_dict,file="./data/feat_uni_aug.rda")
 
@@ -36,7 +38,8 @@ sample_idx<-readRDS("./data/sample_idx.rda")
 data_at_enc %<>% 
   semi_join(sample_idx$rs, by=c("PATIENT_NUM","ENCOUNTER_NUM"))
 
-cd_out<-c("KUH\\|FLO_MEAS_ID",          #flowsheet facts
+cd_out<-c("KUH\\|GEN_ALERT",            #some general alerts
+          "KUH\\|FLO_MEAS_ID",          #flowsheet facts
           "KUH\\|MEDICATION_ID",        #medication
           "KUH\\|DX_ID",                #diagnosis
           "KUMC\\|REPORTS\\|NOTETYPES", #notetypes
@@ -77,6 +80,8 @@ rm(data_at_enc); gc()
 data_at_enc2 %<>% 
   semi_join(readRDS("./data/feat_uni_aug.rda") %>% 
               filter(uni_p_val<=0.01),by="VARIABLE")
+
+readRDS("./data/feat_uni_aug.rda") %>%
 
 
 ##==============feature aggregation: recency=========

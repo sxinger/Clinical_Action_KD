@@ -43,7 +43,7 @@ data_at_enc_discrt1<-data_at_enc_discrt %>%
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM,VARIABLE,NVAL_NUM,TVAL_CHAR,START_SINCE_TRIAGE)
 
 #--identify the "missing" category
-chunk_n<-10
+chunk_n<-50
 pat_chunk<-enroll %>% 
   dplyr::select(PATIENT_NUM,ENCOUNTER_NUM) %>%
   dplyr::mutate(chunk=sample(1:chunk_n,n(),replace=T),
@@ -67,7 +67,7 @@ for(i in 1:chunk_n){
   cat("finish chunk",i,".\n")
 }
 
-data_at_enc_discrt<-data_at_enc_discrt1 %>%
+ldata_at_enc_discrt<-data_at_enc_discrt1 %>%
   bind_rows(data_at_enc_discrt2)
 
 rm(data_at_enc_discrt1,data_at_enc_discrt2)

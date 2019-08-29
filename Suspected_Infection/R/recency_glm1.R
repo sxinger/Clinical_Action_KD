@@ -17,6 +17,10 @@ Xy_sparse<-readRDS("./data/Xy_sp_rec.rda")
 x_mt<-Xy_sparse$x_mt
 y_mt<-Xy_sparse$y_mt
 
+##--temporary fix: remove GEN_ALERT
+x_mt<-x_mt[,which(!grepl("GEN_ALERT",colnames(x_mt)))]
+x_mt<-x_mt[,which(colnames(x_mt)!="KUH|FLO_MEAS_ID+LINE:1201_2")]
+
 ##================partition==================
 sample_idx<-readRDS("./data/sample_idx.rda")
 
@@ -67,7 +71,7 @@ sortedGrid<-h2o.getGrid("elastnet_alpha_grid",sort_by = "auc",decreasing = TRUE)
 alpha_opt_model<-h2o.getModel(sortedGrid@model_ids[[1]])
 alpha_opt<-alpha_opt_model@parameters$alpha
 
-##================================ validation
+##================================ validation ============================
 bst_grid_cv<-h2o.getFrame(alpha_opt_model@model[["cross_validation_holdout_predictions_frame_id"]][["name"]])
 valid_cv<-data.frame(ENCOUNTER_NUM = row.names(train_mt),
                      valid_type = 'T',
@@ -84,7 +88,7 @@ valid<-data.frame(ENCOUNTER_NUM = row.names(test_mt),
                   real = test_mt[,target_idx],
                   stringsAsFactors = F)
 
-##============================= variable importance
+##============================= variable importance =========================
 feat_dict<-readRDS("./data/feat_uni_aug.rda")
 
 var_imp<-h2o.varimp(alpha_opt_model) %>%
@@ -124,10 +128,10 @@ glm_out<-list(valid_out=rbind(valid_cv,valid),
               var_imp=var_imp2,
               hyper_param=alpha_opt)
 
-pROC::auc(valid$real,valid$pred) #0.9086
-pROC::ci.auc(valid$real,valid$pred) #95% CI: 0.9036-0.9136 (DeLong)
+pROC::auc(valid$real,valid$pred) #0.9071
+pROC::ci.auc(valid$real,valid$pred) #95% CI: 0.902-0.9122 (DeLong)
 
-k<-nrow(var_imp) #968
+k<-nrow(var_imp) #1075
 saveRDS(glm_out,file=paste0("./output/glm1_rec_fs",k,".rda"))
 
 
@@ -136,7 +140,7 @@ h2o.shutdown(prompt = FALSE)
 
 
 ##=============================review results==========================
-k<-968
+k<-1075
 glm_out<-readRDS(paste0("./output/glm1_rec_fs",k,".rda"))
 var_imp<-glm_out$var_imp
 valid<-glm_out$valid_out %>% filter(valid_type=="V")

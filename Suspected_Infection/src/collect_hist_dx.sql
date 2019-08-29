@@ -1,32 +1,24 @@
 /*******************************************************************************/
-/*@file SI_comorb_dx.sql
+/*@file collect_hist_dx.sql
 /*
 /*in: SI_case_ctrl, observaton_fact, concept_dimension, comorb_dx_cd
 /*
-/*params: &&i2b2_db_schema, &&start_date
+/*params: &&i2b2_db_schema, &&start_date, &&cohort
 /*
 /*out: SI_comorb_dx
 /*
 /*action: write
 /********************************************************************************/
-create table SI_comorb_dx as
-with dx_path as (
-select (dx.DX_type || ':' || dx.DX_code) icd_cd
-      ,dx.DX icd_label
-      ,dx.weight
-      ,cd.concept_path 
-from &&i2b2_db_schemadata.concept_dimension cd
-join comorb_dx_cd dx on cd.concept_cd = (dx.DX_type || ':' || dx.DX_code)
-)
-     ,dx_cd as (
-select dp.icd_cd
-      ,dp.icd_label
-      ,dp.weight
-      ,cd.concept_cd
+create table SI_hist_dx as
+with dx_cd as (
+select cd.concept_cd
       ,cd.name_char
-from dx_path dp
-join &&i2b2_db_schemadata.concept_dimension cd
-on cd.concept_path like (dp.concept_path || '%') and
+      ,ht.c_hlevel
+      ,replace(' \ ','\',ht.c_tooltip,cd) concept_path
+      ,max(term_id) over (partition by ht.c_basecode)
+from &&i2b2_db_schemadata.concept_dimension cd
+join &&i2b2_db_schemadatametadata.heron_terms ht
+on cd.concept_cd = ht.c_basecode and
    concept_path like '\i2b2\Diagnoses\ICD%'
 )
     ,collect_dx as(
@@ -36,7 +28,7 @@ select tr.patient_num
       ,obs.modifier_cd modifier
       ,obs.start_date start_dt
       ,round(tr.triage_start-obs.start_date) day_bef_triage
-from SI_case_ctrl tr
+from &&cohort tr
 join &&i2b2_db_schemadata.observation_fact obs 
 on tr.patient_num = obs.patient_num and 
    obs.encounter_num <> tr.encounter_num and 

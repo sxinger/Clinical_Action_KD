@@ -1,0 +1,36 @@
+STEP,SCRIPT,DESCRIPTION
+1,ED_betwn,collect all ED encounters within a certain time window
+2,ED_18up,filter out age at visit<18 and identify triage and discharge times
+3,ED_eligb,identify ED triage assigments and timestamp the first and last flwsht observation
+4,ED_Culture,timestamp initial body fluid culture order (culture order concepts are hard-coded in the script)
+5,ED_Antibio,timestamp initial antibiotic administration (abx concepts searching is hard-coded in the script)
+6,ED_SI,timestamp suspected infection onset (earlier occurence of culture order and abx, within 4-hour of each other)
+7,SI_ServDep,identify floor transfering time by track service deparment changes
+8,SI_case_ctrl,initial suspected infection cohort admitted through ED (case-control)
+9,ED_SI_Temp,collect temperatures for SI cases from flwsht
+10,ED_SI_HR,collect heart rates for SI cases from flwsht
+11,ED_SI_RR,collect respiratory rates for SI cases from flwsht
+12,ED_SI_WBC,collect white blood cell counts and xxx from lab
+13,ED_SI_SIRS,#critical event-timestamp SIRS onsets
+14,ED_SI_GCS,collect GCS scores for SI cases from flwsht
+15,ED_SI_LOC,collect level of consciousness for SI caes from flwsht
+16,ED_SI_BP,collect blood pressures for SI cases using existing curated feature 
+17,ED_SI_BILRB,collect bilirubin for SI cases from lab, and also estimate bilirubin increase from baseline
+18,ED_SI_SCR,collect scr for SI cases from lab and also estimate scr increase from baseline
+19,ED_SI_DDIMER,collect d-dimer for SI cases from lab
+20,ED_SI_INR,collect international normalized ratio (prothrombin test) for SI cases from lab 
+21,ED_SI_PTT,collect Partial Thromboplastin Time for SI cases from lab
+22,ED_SI_PLATLT,collec palatlets for SI cases from lab
+23,ED_SI_SPO2,collect spO2 for SI cases from flwsht
+24,ED_SI_PAO2,collect paO2 for SI cases from flwsht and lab
+25,ED_SI_PAFIO2,collect paO2/fiO2 ratios for SI cases from flwsht
+26,ED_SI_LACTATE,collect lactate for SI cases from flwsht
+27,ED_SI_OD,#critical event-timestamp all OD onsets
+28,ED_SI_3HR_screen, 
+29,ED_SI_3HR_ABX,identify and timestamp initial abx
+30,ED_SI_3HR_IV,track IV bolus usage 
+31,ED_SI_6HR_screen,
+32,ED_SI_6HR_CARDIAC,identify cardiac resusitation activities
+33,ED_SI_6HR_PRESSOR_NH,track pressor usage(need to send pressor reference tbl over and access clarity for infusion rates)- infusion rates only available on NH
+34,ED_SI_6HR_PRESSOR_BH,track pressor usage
+35,ED_SI_SEPSIS_STAGE,identify sepsis stages

@@ -12,6 +12,8 @@ require_libraries(c(
                     "stringr",
                     "xgboost"))
 
+si_enroll<-readRDS("./data/SI_enroll.rda")
+
 #add additional targets
 rand_sample<-readRDS("./data/rand_sample_idx.rda") %>%
   dplyr::mutate(TRT3HR_END1 = ifelse(is.na(BOLUS_TRIGGER),pmax(BLOOD_C,ABX,LAC1,na.rm=F),TRT3HR_END1),

@@ -91,3 +91,9 @@ execute_single_sql(conn,
                    write=(sql$action=="write"),
                    table_name=toupper(sql$tbl_out))
 
+##---collect all dx at and before encounter
+sql<-parse_sql(paste0("./src/collect_hist_dx.sql"),
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               cohort="SI_CASE_CTRL")
+

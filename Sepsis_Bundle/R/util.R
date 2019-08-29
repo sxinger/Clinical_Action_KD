@@ -76,7 +76,7 @@ connect_to_db<-function(DBMS_type,driver_type=c("OCI","JDBC"),config_file){
 ## parse Oracle sql lines
 parse_sql<-function(file_path,...){
   param_val<-list(...)
-
+  
   #read file
   con<-file(file_path,"r")
   
@@ -106,10 +106,6 @@ parse_sql<-function(file_path,...){
       params<-gsub(",","",strsplit(trimws(gsub("(/\\*params\\:\\s)","",line),"both")," ")[[1]])
       params_symbol<-params
       #normalize the parameter names
-      params[params=="@dblink"]<-"db_link"
-      params[params=="&&dbname"]<-"db_name"
-      params[params=="&&i2b2"]<-"i2b2_db_schema"
-      params[params=="&&PCORNET_CDM"]<-"cdm_db_schema"
       params<-gsub("&&","",params)
     }
     #remove the first line
@@ -124,7 +120,7 @@ parse_sql<-function(file_path,...){
     }
   }
   close(con)
-
+  
   #update parameters as needed
   if(params_ind){
     #align param_val with params
@@ -136,7 +132,7 @@ parse_sql<-function(file_path,...){
     param_val<-param_val[order(names(param_val))]
     params_symbol<-params_symbol[order(params)]
     params<-params[order(params)]
-
+    
     #substitube params_symbol by param_val
     for(i in seq_along(params)){
       sql_string<-gsub(params_symbol[i],

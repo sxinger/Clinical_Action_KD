@@ -25,19 +25,16 @@ end_date<-"2018-12-31"
 within_d<-2
 
 ##------------ identify sepsis progress and treatment pathways by executing the following sql snippets in order --------------
-pressor_cd<-read.csv("./src/pressor_cd.csv",stringsAsFactors = F,na.strings = c(""," "))
-dbWriteTable(conn,"PRESSOR_CD",pressor_cd,temporary=T,overwrite=T)
-
 statements<-paste0(
-  "./inst/",
-  c("ED_betwn",
-    "ED_18up",
-    "ED_eligb",
+  "./src/",
+  c("ED_betwn",    
+    "ED_18up",     
+    "ED_eligb",    
     "ED_Culture",
     "ED_Antibio",
     "ED_SI",
     "SI_ServDep",
-    "SI_case_ctrl",
+    "SI_case_ctrl", #used in SI study from here above
     "ED_SI_Temp",
     "ED_SI_HR",
     "ED_SI_RR",
@@ -61,55 +58,62 @@ statements<-paste0(
     "ED_SI_3HR_ABX",
     "ED_SI_3HR_IV", 
     "ED_SI_6HR_screen",
-    "ED_SI_6HR_PRESSOR", #need to access clarity for infusion rates
     "ED_SI_6HR_CARDIAC"),
   ".sql"
 )
 
 #--excecute single snippet
-# sql<-parse_sql(statements[25],
-#                db_link=NULL,
-#                i2b2_db_schema=config_file$i2b2_db_schema,
-#                start_date=start_date,
-#                end_date=end_date,
-#                within_d=within_d)
-# 
-# execute_single_sql(conn,
-#                    statement=sql$statement,
-#                    write=(sql$action=="write"),
-#                    table_name=toupper(sql$tbl_out))
+sql<-parse_sql(statements[13],
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date,
+               within_d=within_d)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
 
 #--batch execution
 execute_batch_sql(conn,statements,verb=T,
-                  db_link=NULL,
                   i2b2_db_schema=config_file$i2b2_db_schema,
                   start_date=start_date,
                   end_date=end_date,
                   within_d=within_d)
 
 ##--------------- vasopressor details from clarity ---------------------------------------------------
+#---connect id server
 config_file_path<-"./config_nh.csv"
 config_file<-read.csv(config_file_path,stringsAsFactors = F)
 conn<-connect_to_db("Oracle","OCI",config_file)
 
+#---send over vasopressor concepts
+pressor_cd<-read.csv("./ref/pressor_cd.csv",stringsAsFactors = F,na.strings = c(""," "))
 dbWriteTable(conn,"PRESSOR_CD",pressor_cd,temporary=T,overwrite=T)
-sql<-parse_sql("./inst/ED_SI_6HR_PRESSOR_NH.sql",
-               db_link=NULL,
+
+sql<-parse_sql("./src/ED_SI_6HR_PRESSOR_NH.sql",
                i2b2_db_schema=config_file$i2b2_db_schema,
                start_date=start_date,
                end_date=end_date,
                within_d=within_d)
+
 execute_single_sql(conn,
                    statement=sql$statement,
                    write=(sql$action=="write"),
                    table_name=toupper(sql$tbl_out))
 
+
+##---re-establish connection to de-id server
 config_file_path<-"./config.csv"
 config_file<-read.csv(config_file_path,stringsAsFactors = F)
 conn<-connect_to_db("Oracle","OCI",config_file)
-sql<-parse_sql("./inst/ED_SI_6HR_PRESSOR_BH.sql",
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema)
+
+sql<-parse_sql("./src/ED_SI_6HR_PRESSOR_BH.sql",
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date,
+               end_date=end_date,
+               within_d=within_d)
+
 execute_single_sql(conn,
                    statement=sql$statement,
                    write=(sql$action=="write"),
@@ -117,25 +121,97 @@ execute_single_sql(conn,
 
 
 ##--------------- Stage sepsis and extract the final cohort --------------------
-sql<-parse_sql("./inst/ED_SI_SEPSIS_STAGE.sql",
-               db_link=NULL,
+##---re-establish connection to de-id server
+config_file_path<-"./config.csv"
+config_file<-read.csv(config_file_path,stringsAsFactors = F)
+conn<-connect_to_db("Oracle","OCI",config_file)
+
+sql<-parse_sql("./src/ED_SI_SEPSIS_STAGE.sql",
                i2b2_db_schema=config_file$i2b2_db_schema,
                start_date=start_date,
                end_date=end_date,
                within_d=within_d)
+
 execute_single_sql(conn,
                    statement=sql$statement,
                    write=(sql$action=="write"),
                    table_name=toupper(sql$tbl_out))
 
 ##----------------- get consort table ------------------------------
-sql<-parse_sql(paste0("./inst/consort_diagram.sql"))
+sql<-parse_sql(paste0("./src/consort_diagram.sql"))
 consort<-execute_single_sql(conn,
                             statement=sql$statement,
                             write=(sql$action=="write"),
                             table_name=toupper(sql$tbl_out))
 
 write.csv(consort,file="./result/consort_diagram.csv",row.names = F)
+
+
+##----------------- collect I2B2 facts---------------
+##---collect patient level info
+sql<-parse_sql(paste0("./src/collect_pat_fact.sql"),
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               cohort="ED_SI_SEPSIS_STAGE")
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+##---collect encounter level info
+sql<-parse_sql(paste0("./src/collect_fact_at_enc.sql"),
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               cohort="ED_SI_SEPSIS_STAGE")
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+##---collect patient-level historical info: overload
+# sql<-parse_sql(paste0("./src/collect_fact_bef_enc.sql"),
+#                db_link=NULL,
+#                i2b2_db_schema=config_file$i2b2_db_schema,
+#                start_date=start_date,
+#                cohort="ED_SI_SEPSIS_STAGE")
+# 
+# execute_single_sql(conn,
+#                    statement=sql$statement,
+#                    write=(sql$action=="write"),
+#                    table_name=toupper(sql$tbl_out))
+
+
+##---collect historical comorbidity info
+comorb_icd<-read.csv("../Sepsis_Bundle/ref/charlson_ICD.csv",
+                     stringsAsFactors = F,na.strings=c(""," "))
+dbWriteTable(conn,"COMORB_DX_CD",comorb_icd,temporary=T,overwrite=T)
+
+sql<-parse_sql("./src/collect_comorb_dx.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
+
+##---collect other chronic conditions of interest
+chronic_icd<-read.csv("../Sepsis_Bundle/ref/chronic_ICD.csv",
+                      stringsAsFactors = F,na.strings=c(""," "))
+dbWriteTable(conn,"CHRONIC_DX_CD",chronic_icd,temporary=T,overwrite=T)
+
+sql<-parse_sql("./src/collect_chronic_dx.sql",
+               db_link=NULL,
+               i2b2_db_schema=config_file$i2b2_db_schema,
+               start_date=start_date)
+
+execute_single_sql(conn,
+                   statement=sql$statement,
+                   write=(sql$action=="write"),
+                   table_name=toupper(sql$tbl_out))
+
 
 ##----------------- clean up intermediate tables --------------
 for(i in 1:length(statements)){
@@ -151,61 +227,3 @@ for(i in 1:length(statements)){
     next
   }
 }
-
-##----------------- collect I2B2 facts---------------
-#at the same financial encounter
-sql<-parse_sql(paste0("./inst/collect_fact_at_enc.sql"),
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema,
-               cohort="ED_SI_SEPSIS_STAGE")
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
-
-#before the encounter -- too many facts!
-# sql<-parse_sql(paste0("./inst/collect_fact_bef_enc.sql"),
-#                db_link=NULL,
-#                i2b2_db_schema=config_file$i2b2_db_schema,
-#                start_date=start_date,
-#                cohort="ED_SI_SEPSIS_STAGE")
-# 
-# execute_single_sql(conn,
-#                    statement=sql$statement,
-#                    write=(sql$action=="write"),
-#                    table_name=toupper(sql$tbl_out))
-
-
-##---collect historical comorbidity info----
-comorb_icd<-read.csv("../Sepsis_Bundle/src/charlson_ICD.csv",
-                     stringsAsFactors = F,na.strings=c(""," "))
-dbWriteTable(conn,"COMORB_DX_CD",comorb_icd,temporary=T,overwrite=T)
-
-sql<-parse_sql("./inst/collect_comorb_dx.sql",
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema,
-               start_date=start_date)
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
-
-
-##---collect other chronic conditions of interest
-chronic_icd<-read.csv("../Sepsis_Bundle/src/chronic_ICD.csv",
-                      stringsAsFactors = F,na.strings=c(""," "))
-dbWriteTable(conn,"CHRONIC_DX_CD",chronic_icd,temporary=T,overwrite=T)
-
-sql<-parse_sql("./inst/collect_chronic_dx.sql",
-               db_link=NULL,
-               i2b2_db_schema=config_file$i2b2_db_schema,
-               start_date=start_date)
-
-execute_single_sql(conn,
-                   statement=sql$statement,
-                   write=(sql$action=="write"),
-                   table_name=toupper(sql$tbl_out))
-
-
